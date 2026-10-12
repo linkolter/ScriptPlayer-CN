@@ -6,7 +6,7 @@
 
 一款面向 Windows 的本地视频与 Funscript 脚本播放器，重新整理了界面、媒体库和围绕脚本播放的时间轴，让日常操作更加自然、顺手。
 
-当前本地候选：**v1.0.12.3**。发布准备完成后可从 [Releases](https://github.com/linkolter/ScriptPlayer-CN/releases) 下载。新分包目前仅在本地准备，尚未上传。
+当前版本：**v1.0.12.3**。应用源码已在本仓库公开，Windows 下载包仍在准备中；新版程序、mpv 与 FFmpeg 分包尚未发布，后续将在 [Releases](https://github.com/linkolter/ScriptPlayer-CN/releases) 提供。
 
 ## 播放与浏览
 
@@ -51,7 +51,9 @@
 
 WPF + .NET Framework 4.8 + libmpv。主工程：`ScriptPlayer/ScriptPlayer/ScriptPlayer.csproj`；解决方案：`ScriptPlayer/ScriptPlayer.sln`。
 
-候选源码提供 `tools/Build-Public.ps1` 与 `tools/runtime-manifest.json`。构建前恢复依赖包，并将匹配的运行组件放入 `ScriptPlayer/ScriptPlayer/Runtime`。本机已验证构建使用已有 MK312 产物，**尚未验证新机器从零构建整个解决方案**，不能将脚本理解为干净环境的一键构建保证。
+本仓库提供 `tools/Build-Public.ps1` 与 `tools/runtime-manifest.json`。构建前恢复依赖包，并将匹配的运行组件放入 `ScriptPlayer/ScriptPlayer/Runtime`。本机已验证构建使用已有 MK312 产物，**尚未验证新机器从零构建整个解决方案**，不能将脚本理解为干净环境的一键构建保证。
+
+根目录 `SHA256SUMS.txt` 记录整理源码包内文件的原始字节；Git 换行规范化及后续文档更新后，不应用它校验当前检出目录。
 
 ## 反馈
 

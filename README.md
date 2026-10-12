@@ -6,7 +6,7 @@
 
 A Windows video and Funscript player with a redesigned interface, a local media library, and a timeline built around script playback.
 
-Current local candidate: **v1.0.12.3**. Downloads will be available on [Releases](https://github.com/linkolter/ScriptPlayer-CN/releases) after release preparation is complete. The new split packages are local candidates, not published downloads.
+Current version: **v1.0.12.3**. The application source is available in this repository. Windows download packages are being prepared for [Releases](https://github.com/linkolter/ScriptPlayer-CN/releases); the new app, mpv, and FFmpeg packages have not been published yet.
 
 ## Playback that feels natural
 
@@ -51,7 +51,9 @@ For an update, reuse runtime files only when their hashes match that release's `
 
 WPF + .NET Framework 4.8 + libmpv. Main project: `ScriptPlayer/ScriptPlayer/ScriptPlayer.csproj`; solution: `ScriptPlayer/ScriptPlayer.sln`.
 
-The source candidate includes `tools/Build-Public.ps1` and `tools/runtime-manifest.json`. Restore the required packages and place the matching runtime files in `ScriptPlayer/ScriptPlayer/Runtime` before building. The validated local build used existing MK312 output; a clean build of the whole solution on a fresh machine has **not** been verified. Do not treat the packaged script as a one-command clean-machine build guarantee.
+This repository includes `tools/Build-Public.ps1` and `tools/runtime-manifest.json`. Restore the required packages and place the matching runtime files in `ScriptPlayer/ScriptPlayer/Runtime` before building. The validated local build used existing MK312 output; a clean build of the whole solution on a fresh machine has **not** been verified. Do not treat the packaged script as a one-command clean-machine build guarantee.
+
+The root `SHA256SUMS.txt` records file bytes in the curated source archive. Git line-ending normalization and subsequent documentation edits mean it should not be used to verify the current checkout.
 
 ## Feedback
 
