@@ -6,8 +6,9 @@
         xmlns:controls="clr-namespace:ScriptPlayer.Controls"
         mc:Ignorable="d" DataContext="{Binding RelativeSource={RelativeSource Self}, Path=ViewModel}"
         Topmost="{Binding Settings.StayOnTop}"
-        Title="Playlist" Height="423" Width="300" WindowStyle="ToolWindow">
-    <Grid>
+        Title="ScriptPlayer 中文版 · 播放列表" Height="720" Width="1080" MinHeight="520" MinWidth="760"
+        WindowStartupLocation="CenterOwner" Background="#F4F6F9">
+    <Grid Background="#F4F6F9">
         <controls:PlaylistControl ViewModel="{Binding Path=.}"></controls:PlaylistControl>
     </Grid>
 </Window>

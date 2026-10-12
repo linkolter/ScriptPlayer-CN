@@ -1,108 +1,66 @@
-# ScriptPlayer 中文增强版
+# ScriptPlayer
 
-面向中文用户的 ScriptPlayer 增强版本。在原版的视频与脚本同步播放能力之上，本项目加入中文界面、媒体库管理、多作者脚本选择、内嵌 MPV 播放器以及 TCode 多轴设备支持。
+**English** | [简体中文](README.zh-CN.md)
 
-> [!IMPORTANT]
-> 本项目是 [FredTungsten/ScriptPlayer](https://github.com/FredTungsten/ScriptPlayer) 的第三方中文增强 Fork，并非原作者提供或维护的官方中文发行版。项目保留上游来源说明，并继续遵循 [GNU GPL-3.0](LICENSE) 许可证。
+*Simple playback. More freedom.*
 
-当前版本：`1.0.11`
+A Windows video and Funscript player with a redesigned interface, a local media library, and a timeline built around script playback.
 
-## 当前功能
+Current local candidate: **v1.0.12.3**. Downloads will be available on [Releases](https://github.com/linkolter/ScriptPlayer-CN/releases) after release preparation is complete. The new split packages are local candidates, not published downloads.
 
-### 中文界面
+## Playback that feels natural
 
-- 对菜单、设置、提示信息及主要操作界面进行了中文化。
-- 增加常见标签的中文翻译，便于整理和浏览本地媒体。
+- Video playback powered by libmpv; FFmpeg handles thumbnails and other media processing.
+- Large covers with a single-line title make the sidebar easy to browse.
+- The left playlist, bottom controls, and right adjustment panel appear independently. Dragging or opening a menu keeps the relevant controls visible.
+- An integrated heatmap and seek timeline shows bookmarks, AB loop points, and paused-exit markers. Hover previews help you find a scene.
+- The heatmap can stay visible without revealing the entire bottom control panel on hover.
 
-### 中文增强播放列表
+## Media, scripts, and devices
 
-- 重新设计媒体列表显示方式。
-- 支持封面、标签、收藏和脚本数量等信息。
-- 支持读取本地 NFO 信息，便于管理本地视频库。
+- A local media library with covers, NFO metadata, tags, and favorites.
+- Multiple authors' script variants and the multi-axis companion files associated with the selected script.
+- Funscript synchronization, multi-axis scripts, TCode output, and Handy connectivity.
+- Playback history and paused-exit markers are separate. A paused-exit marker is saved only when you explicitly pause and then exit normally; switching videos does not create one.
 
-### 多作者脚本选择
+## Make it yours
 
-这里的“多脚本”是指：**同一个视频可以对应不同作者制作的多份脚本，每次播放时选择其中一位作者的脚本进入视频。**
+- A WPF interface with consistent fonts, buttons, spacing, and switches.
+- Simplified Chinese and English, dark and light themes, and five accent colors.
+- Optional interface animations and layouts that prioritize essential controls in narrow windows.
+- The bundled FFmpeg is located relative to the application, without a developer-specific installation path.
+- Each user configures their own Handy key. It is encrypted for the current Windows user; release packages do not include the developer's private configuration or credentials.
 
-例如：
+The current application starts in Simplified Chinese with a new profile. Choose English in **设置 → 外观** (Settings → Appearance). The README language does not change the application language automatically.
 
-```text
-影片.mp4
-影片-作者甲.funscript
-影片-作者甲.twist.funscript
-影片-作者甲.surge.funscript
-影片-作者乙.funscript
-影片-作者乙.twist.funscript
-```
+## Download and install
 
-选择“作者甲”后，只会加载作者甲的主脚本及其同名多轴脚本；`.twist`、`.surge` 等多轴伴随文件不会被误显示成独立作者。
+The proposed release provides three separate Windows x64 downloads:
 
-### 内嵌 MPV 播放器
+1. `ScriptPlayer-v1.0.12.3-windows-x64-app.zip`
+2. `ScriptPlayer-v1.0.12.3-windows-x64-mpv.zip`
+3. `ScriptPlayer-v1.0.12.3-windows-x64-ffmpeg.zip`
 
-- 可在 ScriptPlayer 窗口内部播放视频。
-- 播放画面限制在视频区域中，不再覆盖播放列表、时间轴和其他操作界面。
-- 使用 D3D11，并支持 MPV 硬件解码，降低部分电脑播放高清视频时的 CPU 占用。
-- 仍保留原有播放方式，方便按设备和兼容性需求切换。
+Extract **all three into the same folder**, keeping their contents and subfolders. `ScriptPlayer.exe`, `libmpv-2.dll`, and `ffmpeg.exe` must be beside one another. Then run `ScriptPlayer.exe` and add your media and scripts. See [installation details / 安装说明](INSTALL.md).
 
-### TCode 多轴支持
+For an update, reuse runtime files only when their hashes match that release's `runtime-manifest.json`. Re-enter your Handy key when moving to another Windows user or computer.
 
-- 支持通过串口连接 TCode、OSR2、SR6 等兼容设备，默认波特率为 `115200`。
-- 支持 TCode v0.3 常用通道：`L0`、`L1`、`L2`、`R0`、`R1`、`R2`、`V0`、`A0`、`A1`、`A2`。
-- 支持独立的 `.surge`、`.sway`、`.twist`、`.roll`、`.pitch` 等多轴 funscript 文件。
-- 支持 funscript 1.1 的 `axes` 结构和 funscript 2.0 的 `channels` 结构。
-- 连接后可在界面中查看串口及当前已加载的轴。
+**Runtime distribution preparation is still open.** Exact core source revisions have been identified, but the complete corresponding dependency sources and build materials for the current mpv/FFmpeg builds are not yet assembled. Separating binaries into release assets does not remove these requirements. See [third-party source status](docs/THIRD_PARTY_SOURCES.md). The current runtime archives are local candidates only.
 
-> [!WARNING]
-> 多轴设备首次使用时，请先降低设备速度和活动范围，并确认各轴方向、限位与机械结构安全。不同固件和设备的轴定义可能存在差异。
+## Source and building
 
-## 下载与使用
+WPF + .NET Framework 4.8 + libmpv. Main project: `ScriptPlayer/ScriptPlayer/ScriptPlayer.csproj`; solution: `ScriptPlayer/ScriptPlayer.sln`.
 
-可在本仓库的 [Releases](https://github.com/linkolter/ScriptPlayer-CN/releases) 页面下载便携版压缩包。
+The source candidate includes `tools/Build-Public.ps1` and `tools/runtime-manifest.json`. Restore the required packages and place the matching runtime files in `ScriptPlayer/ScriptPlayer/Runtime` before building. The validated local build used existing MK312 output; a clean build of the whole solution on a fresh machine has **not** been verified. Do not treat the packaged script as a one-command clean-machine build guarantee.
 
-1. 下载对应版本的压缩包并完整解压。
-2. 运行 `ScriptPlayer.exe`。
-3. 在播放方式中选择所需播放器；使用内嵌播放器时可选择“MPV 内嵌”。
-4. 使用 TCode 设备时，从设备菜单选择串口并连接。
+## Feedback
 
-生成视频预览图或缩略图时，可能仍需安装 [FFmpeg](https://ffmpeg.org/download.html#build-windows)。部分原版设备连接功能可能需要安装 [Visual C++ Redistributable x64](https://aka.ms/vs/17/release/vc_redist.x64.exe)。
+Please include the application version, Windows version, reproduction steps, and device model when reporting a problem. Do not post connection keys or private configuration. Device support does not mean every hardware, firmware, and graphics combination has been tested.
 
-## 后续计划
+## About
 
-以下内容是当前开发方向，不代表已经完成，也不承诺固定发布时间：
+A community project gradually developed out of personal interest in a smoother local playback experience.
 
-- **低配电脑性能优化**：减少重复计时器回调、目录重复扫描和不必要的界面刷新。
-- **大媒体库优化**：为封面列表加入虚拟化、缩略图按需加载和缓存控制，降低内存占用。
-- **播放与时间轴优化**：减少时间轴重复计算和绘制，改善长视频及高密度脚本下的流畅度。
-- **MPV 稳定性与布局**：继续完善窗口缩放、全屏、切换播放方式和不同显卡环境下的兼容性。
-- **多作者脚本体验**：完善作者识别、选择记忆、命名规则提示及异常文件处理。
-- **TCode 多轴完善**：增加轴映射、范围、反向、速度和设备配置选项，并扩大真机测试范围。
-- **稳定性修复**：针对低配电脑、旧版 Windows、不同显卡驱动和串口设备持续排查崩溃问题。
-- **汉化补全**：继续清理遗漏的英文界面与提示文本。
+Based on [FredTungsten/ScriptPlayer](https://github.com/FredTungsten/ScriptPlayer), retaining its script synchronization and device control foundations. This is an unofficial derivative under [GPL-3.0](LICENSE). See [origin and modification notices](NOTICE-CN.md). Thanks to the original developers and everyone contributing to open source.
 
-## 问题反馈
-
-提交问题时，建议同时提供：
-
-- 中文增强版版本号；
-- Windows 版本和电脑大致配置；
-- 使用的播放方式；
-- 可复现步骤及错误截图；
-- 若与脚本有关，请说明文件命名方式和脚本格式；
-- 若与 TCode 有关，请说明设备、固件版本及使用的轴。
-
-请勿在公开问题中上传包含隐私信息或无权分发的视频与脚本。
-
-## 项目来源与许可证
-
-- 上游项目：[FredTungsten/ScriptPlayer](https://github.com/FredTungsten/ScriptPlayer)
-- 上游作者：[FredTungsten](https://github.com/FredTungsten) 及 ScriptPlayer 贡献者
-- 中文增强版修改说明：[NOTICE-CN.md](NOTICE-CN.md)
-- 开源许可证：[GNU General Public License v3.0](LICENSE)
-
-感谢 ScriptPlayer 原作者和所有上游贡献者。原始代码版权归相应作者所有；本 Fork 的中文化与增强修改继续按 GPL-3.0 发布。分发修改后的二进制版本时，应同时提供或明确指向对应版本的完整源代码。
-
-## 构建说明
-
-源码解决方案位于 `ScriptPlayer/ScriptPlayer.sln`。本项目继承自较早期的 Windows/.NET Framework 桌面工程，构建时需要与项目引用相匹配的 Visual Studio、.NET Framework 开发组件及 NuGet 依赖。
-
-如需了解原版安装、故障排查和设备兼容信息，请参考 [上游 Wiki](https://github.com/FredTungsten/ScriptPlayer/wiki)。
+*Enjoy your freedom.*

@@ -5,33 +5,29 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ScriptPlayer.Dialogs"
         mc:Ignorable="d"
-        Title="Edit Meta-Data" Height="307.945" Width="367.161">
-    <Grid>
-        <TextBlock HorizontalAlignment="Left" Margin="10,13,0,0" TextWrapping="Wrap" Text="Creator" VerticalAlignment="Top"/>
-        <TextBox x:Name="txtCreator" Height="23" Margin="104,10,10,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top"/>
-        
-        <TextBlock HorizontalAlignment="Left" Margin="10,41,0,0" TextWrapping="Wrap" Text="Original Name" VerticalAlignment="Top"/>
-        <TextBox x:Name="txtOriginalName" Height="23" Margin="104,38,10,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top"/>
-        
-        <TextBlock HorizontalAlignment="Left" Margin="10,69,0,0" TextWrapping="Wrap" Text="Url" VerticalAlignment="Top"/>
-        <TextBox x:Name="txtUrl" Height="23" Margin="104,66,10,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top"/>
-        
-        <TextBlock HorizontalAlignment="Left" Margin="10,97,0,0" TextWrapping="Wrap" Text="Video Url" VerticalAlignment="Top"/>
-        <TextBox x:Name="txtVideoUrl" Height="23" Margin="104,94,10,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top"/>
-        
-        <TextBlock HorizontalAlignment="Left" Margin="10,125,0,0" TextWrapping="Wrap" Text="Tags" VerticalAlignment="Top"/>
-        <TextBox x:Name="txtTags" Height="23" Margin="104,122,10,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top"/>
-        
-        <TextBlock HorizontalAlignment="Left" Margin="10,153,0,0" TextWrapping="Wrap" Text="Performers" VerticalAlignment="Top"/>
-        <TextBox x:Name="txtPerformers" Height="23" Margin="104,150,10,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top"/>
-        
-        <TextBlock HorizontalAlignment="Left" Margin="10,181,0,0" TextWrapping="Wrap" Text="Paid" VerticalAlignment="Top"/>
-        <CheckBox x:Name="cckPaid" Content="" HorizontalAlignment="Left" Margin="104,185,0,0" VerticalAlignment="Top"/>
-        
-        <TextBlock HorizontalAlignment="Left" Margin="10,209,0,0" TextWrapping="Wrap" Text="Comment" VerticalAlignment="Top"/>
-        <TextBox x:Name="txtComment" Height="23" Margin="104,206,10,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top"/>
-        
-        <Button Content="Ok" IsDefault="True" HorizontalAlignment="Right" Margin="0,0,90,10" VerticalAlignment="Bottom" Width="75" Click="btnOk_Click"/>
-        <Button Content="Cancel" IsCancel="True" HorizontalAlignment="Right" Margin="0,0,10,10" VerticalAlignment="Bottom" Width="75"/>
+        Title="Edit Meta-Data" Height="500" Width="480" MinWidth="280">
+    <Grid Margin="12">
+        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Text="Creator" MaxWidth="120" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,0,8"/>
+        <TextBox x:Name="txtCreator" Grid.Row="0" Grid.Column="2" MinHeight="36" TextWrapping="Wrap" Text="" Margin="0,0,0,8"/>
+        <TextBlock Grid.Row="1" Text="Original Name" MaxWidth="120" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,0,8"/>
+        <TextBox x:Name="txtOriginalName" Grid.Row="1" Grid.Column="2" MinHeight="36" TextWrapping="Wrap" Text="" Margin="0,0,0,8"/>
+        <TextBlock Grid.Row="2" Text="Url" MaxWidth="120" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,0,8"/>
+        <TextBox x:Name="txtUrl" Grid.Row="2" Grid.Column="2" MinHeight="36" TextWrapping="Wrap" Text="" Margin="0,0,0,8"/>
+        <TextBlock Grid.Row="3" Text="Video Url" MaxWidth="120" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,0,8"/>
+        <TextBox x:Name="txtVideoUrl" Grid.Row="3" Grid.Column="2" MinHeight="36" TextWrapping="Wrap" Text="" Margin="0,0,0,8"/>
+        <TextBlock Grid.Row="4" Text="Tags" MaxWidth="120" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,0,8"/>
+        <TextBox x:Name="txtTags" Grid.Row="4" Grid.Column="2" MinHeight="36" TextWrapping="Wrap" Text="" Margin="0,0,0,8"/>
+        <TextBlock Grid.Row="5" Text="Performers" MaxWidth="120" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,0,8"/>
+        <TextBox x:Name="txtPerformers" Grid.Row="5" Grid.Column="2" MinHeight="36" TextWrapping="Wrap" Text="" Margin="0,0,0,8"/>
+        <TextBlock Grid.Row="6" Text="Paid" MaxWidth="120" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,0,8"/>
+        <CheckBox x:Name="cckPaid" Grid.Row="6" Grid.Column="2" Style="{DynamicResource ToggleSwitch}" HorizontalAlignment="Right" MinHeight="40" AutomationProperties.Name="付费内容" Margin="0,0,0,8"/>
+        <TextBlock Grid.Row="7" Text="Comment" MaxWidth="120" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,0,8"/>
+        <TextBox x:Name="txtComment" Grid.Row="7" Grid.Column="2" MinHeight="36" TextWrapping="Wrap" Text="" Margin="0,0,0,8"/>
+        <WrapPanel Grid.Row="8" Grid.ColumnSpan="3" HorizontalAlignment="Right" Margin="0,8,0,0">
+            <Button Content="Ok" IsDefault="True" MinHeight="36" MinWidth="88" Margin="0,0,8,0" Click="btnOk_Click"/>
+            <Button Content="Cancel" IsCancel="True" MinHeight="36" MinWidth="88"/>
+        </WrapPanel>
     </Grid>
 </Window>

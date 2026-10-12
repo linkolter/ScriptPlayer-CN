@@ -5,14 +5,17 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:ScriptPlayer.Controls"
              xmlns:shared="clr-namespace:ScriptPlayer.Shared;assembly=ScriptPlayer.Shared"
-             FontFamily="Segoe UI"
-             FontSize="12"
+             FontFamily="{DynamicResource MediaFontFamily}"
+             FontSize="{DynamicResource MediaCaptionFontSize}" Foreground="{DynamicResource MediaTextBrush}"
              mc:Ignorable="d" >
-    <StackPanel Width="300" Background="White">
-        <shared:GifPlayer Name="player" Background="Black" AutoPlay="True" Stretch="Uniform" Height="169"/>
-        <Grid Background="Black">
+    <Border Background="{DynamicResource MediaSurfaceBrush}" BorderBrush="{DynamicResource MediaBorderBrush}" BorderThickness="1"
+            CornerRadius="{DynamicResource MediaCardRadius}" ClipToBounds="True">
+    <StackPanel Width="300">
+        <shared:GifPlayer Name="player" Background="{DynamicResource MediaBackgroundBrush}" AutoPlay="True" Stretch="Uniform" Height="169"/>
+        <Grid Background="{DynamicResource MediaBackgroundBrush}">
             <Image Name="heatMap" HorizontalAlignment="Stretch" Height="15" Stretch="Fill" />
         </Grid>
-        <TextBlock Name="text"  Margin="2" Background="White" Foreground="Black" TextAlignment="Center" Height="Auto" TextWrapping="Wrap"/>
+        <TextBlock Name="text" Margin="12" Foreground="{DynamicResource MediaTextBrush}" TextAlignment="Left" Height="Auto" TextWrapping="Wrap"/>
     </StackPanel>
+    </Border>
 </UserControl>

@@ -19,6 +19,7 @@ using NAudio.Wave;
 using ScriptPlayer.Shared;
 using ScriptPlayer.Shared.Controls;
 using ScriptPlayer.Shared.Scripts;
+using ScriptPlayer.Localization;
 using ScriptPlayer.ViewModels;
 
 namespace ScriptPlayer.Dialogs
@@ -145,6 +146,8 @@ namespace ScriptPlayer.Dialogs
         private void SelectedPageHasChanged()
         {
             UpdatePageTitle();
+            Dispatcher.BeginInvoke(new Action(() => ChineseLocalization.TranslateTree(PageSelector)),
+                System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
         public static readonly DependencyProperty AdditionalPathsProperty = DependencyProperty.Register(
@@ -178,6 +181,39 @@ namespace ScriptPlayer.Dialogs
         }
 
         private static string _lastSelected;
+        private Window DialogOwner => Owner ?? this;
+        private bool embedded;
+        public event EventHandler SettingsApplied;
+        public FrameworkElement CreateEmbeddedContent(Window owner)
+        {
+            Owner = owner;
+            embedded = true;
+            var root = (FrameworkElement)Content;
+            Content = null;
+            root.DataContext = this;
+            foreach (object key in Resources.Keys) root.Resources[key] = Resources[key];
+            txtPasswordVlcPassword.Password = Settings.VlcPassword;
+            txtPasswordKodiPassword.Password = Settings.KodiPassword;
+            InitializeHandyPassword();
+            ChineseLocalization.TranslateTree(root);
+            return root;
+        }
+        public void SelectCategory(string id)
+        {
+            Filter = "";
+            SelectedPage = FindPage(id) ?? SelectedPage;
+        }
+        private void CancelEmbedded_Click(object sender, RoutedEventArgs e)
+        {
+            if (!embedded) { DialogResult = false; return; }
+            Settings = ((ScriptPlayer.MainWindow)Owner).ViewModel.Settings.Duplicate();
+            LoadAdditionalPaths();
+            CreateInputMappings(GlobalCommandManager.CommandMappings);
+            InitializeAudio();
+            txtPasswordVlcPassword.Password = Settings.VlcPassword;
+            txtPasswordKodiPassword.Password = Settings.KodiPassword;
+            InitializeHandyPassword();
+        }
 
         public SettingsDialog(SettingsViewModel initialSettings, string selectedPage = null)
         {
@@ -190,6 +226,7 @@ namespace ScriptPlayer.Dialogs
             CreateInputMappings(GlobalCommandManager.CommandMappings);
             
             InitializeComponent();
+            InitializeHandyPassword();
 
             Pages = BuildPages(PageSelector);
             SelectedPage = FindPage(selectedPage) ?? FindPage(_lastSelected) ?? Pages.FirstOrDefault();
@@ -268,7 +305,7 @@ namespace ScriptPlayer.Dialogs
                     InputMappingViewModel mapping = new InputMappingViewModel
                     {
                         CommandId = scriptplayerCommand.CommandId,
-                        DisplayText = scriptplayerCommand.DisplayText,
+                        DisplayText = ChineseLocalization.Translate(scriptplayerCommand.DisplayText),
                         Shortcut = "",
                         IsGlobal = false
                     };
@@ -282,7 +319,7 @@ namespace ScriptPlayer.Dialogs
                         InputMappingViewModel mapping = new InputMappingViewModel
                         {
                             CommandId = scriptplayerCommand.CommandId,
-                            DisplayText = scriptplayerCommand.DisplayText,
+                            DisplayText = ChineseLocalization.Translate(scriptplayerCommand.DisplayText),
                             Shortcut = shortcut.KeyboardShortcut,
                             IsGlobal = shortcut.IsGlobal
                         };
@@ -340,14 +377,14 @@ namespace ScriptPlayer.Dialogs
 
                     if (pages[sections[0]] == null)
                     {
-                        pages.Add(new SettingsPageViewModel(sections[0], sections[0]));
+                        pages.Add(new SettingsPageViewModel(ChineseLocalization.Translate(sections[0]), sections[0]));
                     }
 
-                    pages[sections[0]].Add(new SettingsPageViewModel(sections[1], id, header));
+                    pages[sections[0]].Add(new SettingsPageViewModel(ChineseLocalization.Translate(sections[1]), id, header));
                 }
                 else
                 {
-                    pages.Add(new SettingsPageViewModel(id, id, header));
+                    pages.Add(new SettingsPageViewModel(ChineseLocalization.Translate(id), id, header));
                 }
             }
 
@@ -396,6 +433,18 @@ namespace ScriptPlayer.Dialogs
             Settings.VlcPassword = ((PasswordBox)sender).Password;
         }
 
+        private bool loadingHandyPassword;
+        private void InitializeHandyPassword()
+        {
+            loadingHandyPassword = true;
+            try { txtHandyConnectionKey.Password = Settings.HandyDeviceId == "NO_KEY" ? string.Empty : Settings.HandyDeviceId ?? string.Empty; }
+            finally { loadingHandyPassword = false; }
+        }
+        private void HandyConnectionKeyChanged(object sender, RoutedEventArgs e)
+        {
+            if (!loadingHandyPassword) Settings.HandyDeviceId = ((PasswordBox)sender).Password;
+        }
+
         private void TxtPasswordKodiPassword_OnPasswordChanged(object sender, RoutedEventArgs e)
         {
             Settings.KodiPassword = ((PasswordBox)sender).Password;
@@ -405,8 +454,11 @@ namespace ScriptPlayer.Dialogs
         {
             txtPasswordVlcPassword.Password = Settings.VlcPassword;
             txtPasswordKodiPassword.Password = Settings.KodiPassword;
+            InitializeHandyPassword();
 
             GlobalCommandManager.IsEnabled = false;
+            Dispatcher.BeginInvoke(new Action(() => ChineseLocalization.TranslateTree(this)),
+                System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
         private void BtnOk_OnClick(object sender, RoutedEventArgs e)
@@ -415,7 +467,8 @@ namespace ScriptPlayer.Dialogs
             ApplyInputMappings();
             Settings.EstimAudioDevice = SelectedAudioDevice?.DeviceId ?? "";
             Settings.AdditionalPaths = new ObservableCollection<string>(AdditionalPaths.Select(p => p.ToPath()));
-            DialogResult = true;
+            if (embedded) SettingsApplied?.Invoke(this, EventArgs.Empty);
+            else DialogResult = true;
         }
 
         private void BtnRemovePath_Click(object sender, RoutedEventArgs e)
@@ -523,7 +576,7 @@ namespace ScriptPlayer.Dialogs
             ScriptFileFormatCollection formats = ScriptLoaderManager.GetFormats();
 
             OpenFileDialog dialog = new OpenFileDialog { Filter = formats.BuildFilter(true) };
-            if (dialog.ShowDialog(this) != true) return;
+            if (dialog.ShowDialog(DialogOwner) != true) return;
 
             Settings.FallbackScriptFile = dialog.FileName;
         }
@@ -550,6 +603,7 @@ namespace ScriptPlayer.Dialogs
                     "Confirm Reset", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
 
             Settings = new SettingsViewModel();
+            InitializeHandyPassword();
             LoadAdditionalPaths();
         }
 
@@ -579,17 +633,17 @@ namespace ScriptPlayer.Dialogs
             }
         }
 
-        private void BtnEditShortCut_Click(object sender, RoutedEventArgs e)
+        private async void BtnEditShortCut_Click(object sender, RoutedEventArgs e)
         {
             InputMappingViewModel inputMapping = ((FrameworkElement)sender).DataContext as InputMappingViewModel;
 
             ShortcutInputDialog dialog = new ShortcutInputDialog()
             {
-                Owner = this,
+                Owner = DialogOwner,
                 Shortcut = inputMapping.Shortcut
             };
 
-            if (dialog.ShowDialog() != true)
+            if (await InlineDialogService.ShowAsync(dialog) != true)
                 return;
 
             inputMapping.Shortcut = dialog.Shortcut;
@@ -609,17 +663,17 @@ namespace ScriptPlayer.Dialogs
             }
         }
 
-        private void BtnAddShortCut_Click(object sender, RoutedEventArgs e)
+        private async void BtnAddShortCut_Click(object sender, RoutedEventArgs e)
         {
             InputMappingViewModel inputMapping = ((FrameworkElement)sender).DataContext as InputMappingViewModel;
 
             ShortcutInputDialog dialog = new ShortcutInputDialog()
             {
-                Owner = this,
+                Owner = DialogOwner,
                 Shortcut = inputMapping.Shortcut
             };
 
-            if (dialog.ShowDialog() != true)
+            if (await InlineDialogService.ShowAsync(dialog) != true)
                 return;
 
             InputMappingViewModel newShortcut = new InputMappingViewModel
@@ -643,17 +697,17 @@ namespace ScriptPlayer.Dialogs
             CreateInputMappings(GlobalCommandManager.GetDefaultCommandMappings());
         }
 
-        private void CommandMappingRow_DoubleClick(object sender, MouseButtonEventArgs e)
+        private async void CommandMappingRow_DoubleClick(object sender, MouseButtonEventArgs e)
         {
             InputMappingViewModel inputMapping = ((FrameworkElement)sender).DataContext as InputMappingViewModel;
 
             ShortcutInputDialog dialog = new ShortcutInputDialog()
             {
-                Owner = this,
+                Owner = DialogOwner,
                 Shortcut = inputMapping.Shortcut
             };
 
-            if (dialog.ShowDialog() != true)
+            if (await InlineDialogService.ShowAsync(dialog) != true)
                 return;
 
             inputMapping.Shortcut = dialog.Shortcut;
@@ -672,7 +726,7 @@ namespace ScriptPlayer.Dialogs
                 Filter = "ffmpeg.exe|ffmpeg.exe"
             };
 
-            if (dialog.ShowDialog(this) != true)
+            if (dialog.ShowDialog(DialogOwner) != true)
                 return;
 
             Settings.FfmpegPath = dialog.FileName;
@@ -683,7 +737,7 @@ namespace ScriptPlayer.Dialogs
             OpenFileDialog dialog = new OpenFileDialog();
             dialog.Filter = "Executable|*.exe";
 
-            if (dialog.ShowDialog(this) != true)
+            if (dialog.ShowDialog(DialogOwner) != true)
                 return;
 
             Settings.ButtplugExePath = dialog.FileName;
@@ -774,13 +828,13 @@ namespace ScriptPlayer.Dialogs
             GlobalCommandManager.IsEnabled = true;
         }
 
-        private void FavouriteFoldersEntry_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private async void FavouriteFoldersEntry_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (!(((ListBoxItem) sender).DataContext is FavouriteFolder folder))
                 return;
 
-            EditFavouriteFolderDialog dialog = new EditFavouriteFolderDialog(folder){Owner = this};
-            if (dialog.ShowDialog() != true)
+            EditFavouriteFolderDialog dialog = new EditFavouriteFolderDialog(folder){Owner = DialogOwner};
+            if (await InlineDialogService.ShowAsync(dialog) != true)
                 return;
 
             if (dialog.IsDefault)
@@ -794,10 +848,10 @@ namespace ScriptPlayer.Dialogs
             folder.IsDefault = dialog.IsDefault;
         }
 
-        private void BtnAddFolder_Click(object sender, RoutedEventArgs e)
+        private async void BtnAddFolder_Click(object sender, RoutedEventArgs e)
         {
-            EditFavouriteFolderDialog dialog = new EditFavouriteFolderDialog() { Owner = this };
-            if (dialog.ShowDialog() != true)
+            EditFavouriteFolderDialog dialog = new EditFavouriteFolderDialog() { Owner = DialogOwner };
+            if (await InlineDialogService.ShowAsync(dialog) != true)
                 return;
 
             if (dialog.IsDefault)

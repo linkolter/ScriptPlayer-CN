@@ -6,8 +6,33 @@ using System.Windows.Media;
 
 namespace ScriptPlayer.Shared
 {
+    public enum PanelCollapseAxis { None, Horizontal, Vertical }
+
     public static class HideOnHover
     {
+        // Reserve a narrow, hit-testable dock edge instead of placing native
+        // video over invisible controls. Only the main window opts into this.
+        public static readonly DependencyProperty CollapseAxisProperty = DependencyProperty.RegisterAttached(
+            "CollapseAxis", typeof(PanelCollapseAxis), typeof(HideOnHover),
+            new PropertyMetadata(PanelCollapseAxis.None));
+
+        private static readonly DependencyProperty OriginalMaximumProperty = DependencyProperty.RegisterAttached(
+            "OriginalMaximum", typeof(double), typeof(HideOnHover), new PropertyMetadata(double.PositiveInfinity));
+
+        public static void SetCollapseAxis(DependencyObject element, PanelCollapseAxis value) => element.SetValue(CollapseAxisProperty, value);
+        public static PanelCollapseAxis GetCollapseAxis(DependencyObject element) => (PanelCollapseAxis)element.GetValue(CollapseAxisProperty);
+
+        private static void SetPanelVisible(FrameworkElement element, bool visible)
+        {
+            element.Opacity = visible ? 1.0 : 0.0;
+            double maximum = visible ? (double)element.GetValue(OriginalMaximumProperty) : 10.0;
+            switch (GetCollapseAxis(element))
+            {
+                case PanelCollapseAxis.Horizontal: element.SetCurrentValue(FrameworkElement.MaxWidthProperty, maximum); break;
+                case PanelCollapseAxis.Vertical: element.SetCurrentValue(FrameworkElement.MaxHeightProperty, maximum); break;
+            }
+        }
+
         public static readonly DependencyProperty OverridesHideOnHoverProperty = DependencyProperty.RegisterAttached(
             "OverridesHideOnHover", typeof(bool), typeof(HideOnHover), new PropertyMetadata(default(bool), OnIgnoresHideOnHoverPropertyChanged));
 
@@ -68,16 +93,21 @@ namespace ScriptPlayer.Shared
 
             if (value)
             {
+                if (GetCollapseAxis(element) != PanelCollapseAxis.None)
+                    element.SetValue(OriginalMaximumProperty, GetCollapseAxis(element) == PanelCollapseAxis.Horizontal
+                        ? frameworkElement.MaxWidth : frameworkElement.MaxHeight);
                 frameworkElement.MouseEnter += OnMouseEnter;
                 frameworkElement.MouseLeave += OnMouseLeave;
+                frameworkElement.IsKeyboardFocusWithinChanged += OnKeyboardFocusChanged;
                 if (!frameworkElement.IsMouseOver)
-                    frameworkElement.Opacity = 0.0;
+                    SetPanelVisible(frameworkElement, false);
             }
             else
             {
                 frameworkElement.MouseEnter -= OnMouseEnter;
                 frameworkElement.MouseLeave -= OnMouseLeave;
-                frameworkElement.Opacity = 1.0;
+                frameworkElement.IsKeyboardFocusWithinChanged -= OnKeyboardFocusChanged;
+                SetPanelVisible(frameworkElement, true);
             }
         }
 
@@ -97,14 +127,21 @@ namespace ScriptPlayer.Shared
             if (element == null)
                 return;
 
-            ((FrameworkElement)sender).Opacity = 0.0;
+            if (!element.IsKeyboardFocusWithin && !element.IsMouseCaptureWithin)
+                SetPanelVisible(element, false);
+        }
+
+        private static void OnKeyboardFocusChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            var element = (FrameworkElement)sender;
+            SetPanelVisible(element, element.IsKeyboardFocusWithin || element.IsMouseOver || element.IsMouseCaptureWithin);
         }
 
         public static void ContextMenuOpening(ContextMenu menu)
         {
             FrameworkElement target = FindPlacementTarget(menu);
             if(target != null)
-                target.Opacity = 1.0;
+                SetPanelVisible(target, true);
         }
 
         private static FrameworkElement FindPlacementTarget(ContextMenu menu)
@@ -128,13 +165,13 @@ namespace ScriptPlayer.Shared
         {
             FrameworkElement target = FindPlacementTarget(menu);
             if (target != null)
-                if(!target.IsMouseOver)
-                    target.Opacity = 0.0;
+                if(!target.IsMouseOver && !target.IsKeyboardFocusWithin)
+                    SetPanelVisible(target, false);
         }
 
         private static void OnMouseEnter(object sender, MouseEventArgs mouseEventArgs)
         {
-            ((FrameworkElement) sender).Opacity = 1.0;
+            SetPanelVisible((FrameworkElement)sender, true);
         }
     }
 }

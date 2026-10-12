@@ -37,13 +37,20 @@ namespace ScriptPlayer.Dialogs
         }
 
         public SerialPortSelector(string[] ports)
+            : this(ports, null)
+        {
+        }
+
+        public SerialPortSelector(string[] ports, string preferredPort)
         {
             List<string> conv = new List<string>();
             foreach (string str in ports) conv.Add(str);
 
             Ports = conv;
 
-            SelectedPort = Ports.FirstOrDefault();
+            SelectedPort = Ports.FirstOrDefault(port =>
+                               string.Equals(port, preferredPort, System.StringComparison.InvariantCultureIgnoreCase))
+                           ?? Ports.FirstOrDefault();
 
             InitializeComponent();
         }
@@ -54,7 +61,7 @@ namespace ScriptPlayer.Dialogs
             if (SelectedPort == null)
                 return;
 
-            DialogResult = true;
+            InlineDialogService.Complete(this, true);
         }
     }
 }

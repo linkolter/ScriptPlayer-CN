@@ -6,14 +6,17 @@
         xmlns:local="clr-namespace:ScriptPlayer.Dialogs"
         mc:Ignorable="d" WindowStartupLocation="CenterOwner" WindowStyle="ToolWindow"
         DataContext="{Binding RelativeSource={RelativeSource Self}}"
-        Title="Selection Section" Height="141.824" Width="284.324">
-    <Grid>
-        <TextBlock HorizontalAlignment="Left" Margin="10,11,0,0" TextWrapping="Wrap" Text="From" VerticalAlignment="Top"/>
-        <TextBox HorizontalAlignment="Right" Height="24" Margin="0,10,10,0" TextWrapping="Wrap" Text="{Binding TimeFrom}" VerticalAlignment="Top" Width="196"/>
-        <TextBlock HorizontalAlignment="Left" Margin="10,40,0,0" TextWrapping="Wrap" Text="To" VerticalAlignment="Top"/>
-        <TextBox HorizontalAlignment="Right" Height="24" Margin="0,39,10,0" TextWrapping="Wrap" Text="{Binding TimeTo}" VerticalAlignment="Top" Width="196"/>
-        <Button Content="Ok" IsDefault="True" HorizontalAlignment="Right" Margin="0,0,89,10" VerticalAlignment="Bottom" Width="75" Click="Button_Click"/>
-        <Button Content="Cancel" IsCancel="True" HorizontalAlignment="Right" Margin="0,0,10,10" VerticalAlignment="Bottom" Width="74"/>
-
+        Title="Selection Section" Height="210" Width="360" MinWidth="260">
+    <Grid Margin="12">
+        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" TextWrapping="Wrap" Text="From" MaxWidth="100" VerticalAlignment="Center" Margin="0,0,0,12"/>
+        <TextBox Grid.Row="0" Grid.Column="2" MinHeight="36" TextWrapping="Wrap" Text="{Binding TimeFrom}" Margin="0,0,0,12"/>
+        <TextBlock Grid.Row="1" TextWrapping="Wrap" Text="To" MaxWidth="100" VerticalAlignment="Center" Margin="0,0,0,12"/>
+        <TextBox Grid.Row="1" Grid.Column="2" MinHeight="36" TextWrapping="Wrap" Text="{Binding TimeTo}" Margin="0,0,0,12"/>
+        <WrapPanel Grid.Row="2" Grid.ColumnSpan="3" HorizontalAlignment="Right" Margin="0,4,0,0">
+            <Button Content="Ok" IsDefault="True" MinHeight="36" MinWidth="88" Margin="0,0,8,0" Click="Button_Click"/>
+            <Button Content="Cancel" IsCancel="True" MinHeight="36" MinWidth="88"/>
+        </WrapPanel>
     </Grid>
 </Window>

@@ -60,7 +60,7 @@ namespace ScriptPlayer.Dialogs
             }
         }
 
-        private void btnPreview_Click(object sender, RoutedEventArgs e)
+        private async void btnPreview_Click(object sender, RoutedEventArgs e)
         {
             ThumbnailBannerGeneratorSettings settings = new ThumbnailBannerGeneratorSettings
             {
@@ -69,8 +69,8 @@ namespace ScriptPlayer.Dialogs
                 TotalWidth = Settings.Banner.TotalWidth
             };
 
-            var dialog = new ThumbnailBannerGeneratorSettingsPreviewDialog(settings) {Owner = this};
-            dialog.ShowDialog();
+            var dialog = new ThumbnailBannerGeneratorSettingsPreviewDialog(settings) {Owner = Application.Current.MainWindow};
+            await InlineDialogService.ShowAsync(dialog);
         }
 
         private void btnOk_Click(object sender, RoutedEventArgs e)
@@ -81,7 +81,7 @@ namespace ScriptPlayer.Dialogs
                 return;
             }
 
-            DialogResult = true;
+            InlineDialogService.Complete(this, true);
         }
     }
 

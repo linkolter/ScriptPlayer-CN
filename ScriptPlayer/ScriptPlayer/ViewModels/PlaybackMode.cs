@@ -11,6 +11,7 @@ namespace ScriptPlayer.ViewModels
         ZoomPlayer,
         Kodi,
         DeoVr,
-        GoProVrPlayer
+        GoProVrPlayer,
+        Mpv
     }
 }

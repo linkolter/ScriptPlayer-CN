@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Windows.Threading;
+using ScriptPlayer.Localization;
 using ScriptPlayer.Shared.Helpers;
 using ScriptPlayer.ViewModels;
 using Application = System.Windows.Application;
@@ -12,6 +13,8 @@ namespace ScriptPlayer
     {
         public App()
         {
+            ChineseLocalization.Initialize();
+
             DateTime start = DateTime.Now;
 
             if (AppDomain.CurrentDomain.FriendlyName.EndsWith(".vshost.exe"))

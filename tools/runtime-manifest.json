@@ -1,0 +1,18 @@
+{
+  "ApplicationVersion": "v1.0.12.3",
+  "RuntimeFiles": [
+    {
+      "File": "ffmpeg.exe",
+      "Bytes": 223360000,
+      "SHA256": "D1E2A156261ECC675081943197A85F08F2868784A0AF499171EDE89353EDAD31"
+    },
+    {
+      "File": "libmpv-2.dll",
+      "Bytes": 119757824,
+      "SHA256": "F709C7CA8B183BEC76B8158BF0C45C53018C63366750729352612F228FF7BDEA"
+    }
+  ],
+  "FFmpegReportedVersion": "8.1-full_build-www.gyan.dev",
+  "FFmpegProvider": "https://www.gyan.dev/ffmpeg/builds/",
+  "SourceMaterialStatus": "Complete corresponding source/build materials before public binary distribution"
+}

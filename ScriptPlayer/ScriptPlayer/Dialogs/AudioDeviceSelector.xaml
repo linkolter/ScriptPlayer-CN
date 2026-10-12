@@ -6,13 +6,17 @@
         xmlns:local="clr-namespace:ScriptPlayer.Dialogs"
         mc:Ignorable="d"
         DataContext="{Binding RelativeSource={RelativeSource Self}}"
-        Title="Audio Device Options" Height="163.982" Width="319.492">
-    <Grid>
-        <ComboBox Margin="61,10,10,0" VerticalAlignment="Top" ItemsSource="{Binding Devices}" SelectedItem="{Binding SelectedDevice}" DisplayMemberPath="Description"/>
-        <Button IsDefault="True" Content="Ok" HorizontalAlignment="Right" Margin="0,0,90,10" VerticalAlignment="Bottom" Width="75" Click="Button_Click"/>
-        <Button IsCancel="True" Content="Cancel" HorizontalAlignment="Right" Margin="0,0,10,10" VerticalAlignment="Bottom" Width="75"/>
-        <TextBlock HorizontalAlignment="Left" Margin="10,13,0,0" TextWrapping="Wrap" Text="Device" VerticalAlignment="Top"/>
-        <ComboBox Margin="61,41,10,0" VerticalAlignment="Top" ItemsSource="{Binding Modes}" SelectedItem="{Binding SelectedMode}"/>
-        <TextBlock HorizontalAlignment="Left" Margin="10,44,0,0" TextWrapping="Wrap" Text="Mode" VerticalAlignment="Top"/>
+        Title="Audio Device Options" Height="220" Width="420" MinWidth="280">
+    <Grid Margin="12">
+        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" TextWrapping="Wrap" Text="Device" MaxWidth="100" VerticalAlignment="Center" Margin="0,0,0,12"/>
+        <ComboBox Grid.Row="0" Grid.Column="2" MinHeight="36" Margin="0,0,0,12" ItemsSource="{Binding Devices}" SelectedItem="{Binding SelectedDevice}" DisplayMemberPath="Description"/>
+        <TextBlock Grid.Row="1" TextWrapping="Wrap" Text="Mode" MaxWidth="100" VerticalAlignment="Center" Margin="0,0,0,12"/>
+        <ComboBox Grid.Row="1" Grid.Column="2" MinHeight="36" Margin="0,0,0,12" ItemsSource="{Binding Modes}" SelectedItem="{Binding SelectedMode}"/>
+        <WrapPanel Grid.Row="2" Grid.ColumnSpan="3" HorizontalAlignment="Right" Margin="0,4,0,0">
+            <Button IsDefault="True" Content="Ok" MinHeight="36" MinWidth="88" Margin="0,0,8,0" Click="Button_Click"/>
+            <Button IsCancel="True" Content="Cancel" MinHeight="36" MinWidth="88"/>
+        </WrapPanel>
     </Grid>
 </Window>

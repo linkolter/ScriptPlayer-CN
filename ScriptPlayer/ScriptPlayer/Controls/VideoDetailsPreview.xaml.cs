@@ -106,7 +106,9 @@ namespace ScriptPlayer.Controls
             FindRelatedFile(Entry.Fullname, "png", LoadHeatmapImage);
             FindRelatedFile(Entry.Fullname, "gif", LoadPreview);
 
-            text.Text = Entry.Shortname + " [" + (Entry.Duration?.ToString("hh\\:mm\\:ss") ?? "?") + "]";
+            text.Text = Entry.DisplayTitle + " [" + (Entry.Duration?.ToString("hh\\:mm\\:ss") ?? "?") + "]" +
+                        Environment.NewLine + Entry.TypeDisplay + " · " + Entry.ScriptVariantDisplay +
+                        (string.IsNullOrWhiteSpace(Entry.TagsDisplay) ? string.Empty : Environment.NewLine + Entry.TagsDisplay);
 
             _currentEntryLoaded = true;
         }

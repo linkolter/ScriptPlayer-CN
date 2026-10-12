@@ -21,6 +21,12 @@ namespace ScriptPlayer.Dialogs
         {
             ViewModel = viewmodel;
             InitializeComponent();
+            Loaded += PlaylistWindow_OnLoaded;
+        }
+
+        private void PlaylistWindow_OnLoaded(object sender, RoutedEventArgs e)
+        {
+            ViewModel?.Playlist?.RefreshLocalMetadata();
         }
     }
 }

@@ -1,4 +1,4 @@
-# ScriptPlayer
+﻿# ScriptPlayer
   
   Video Player application. A simple video player that can parse FunScripts and sync commands to loaded video timestamps
   

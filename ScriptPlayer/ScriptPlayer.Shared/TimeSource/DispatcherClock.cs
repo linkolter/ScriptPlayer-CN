@@ -10,7 +10,6 @@ namespace ScriptPlayer.Shared
         public DispatcherClock(Dispatcher dispatcher, TimeSpan intervall)
         {
             _timer = new DispatcherTimer(intervall, DispatcherPriority.Normal, Timer_Tick, dispatcher);
-            _timer.Tick += Timer_Tick;
             _timer.Start();
         }
 
@@ -26,6 +25,7 @@ namespace ScriptPlayer.Shared
             if (_timer != null)
             {
                 _timer.Stop();
+                _timer.Tick -= Timer_Tick;
                 _timer = null;
             }
         }

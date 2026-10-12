@@ -42,7 +42,7 @@ namespace ScriptPlayer.Dialogs
             if (SelectedDevice == null)
                 return;
 
-            DialogResult = true;
+            InlineDialogService.Complete(this, true);
         }
     }
 }

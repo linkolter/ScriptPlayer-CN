@@ -1,4 +1,4 @@
-﻿<Window x:Class="ScriptPlayer.Dialogs.CompactControlWindow"
+<Window x:Class="ScriptPlayer.Dialogs.CompactControlWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -52,7 +52,7 @@
                 </DockPanel>
             </Grid>
             <Border Grid.Row="1"  BorderThickness="1" BorderBrush="#222" Margin="4" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                <shared:SeekBar Positions="{Binding Positions}" HighlightRange="{Binding DisplayedRange}" SnapsToDevicePixels="True"  HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Name="SeekBar" Thumbnails="{Binding Thumbnails}" Progress="{Binding Path=TimeSource.Progress}" Duration="{Binding Path=TimeSource.Duration}" Seek="SeekBar_OnSeek">
+                <shared:SeekBar Positions="{Binding Positions}" HighlightRange="{Binding DisplayedRange}" SnapsToDevicePixels="True"  HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Name="SeekBar" Thumbnails="{Binding Thumbnails}" Progress="{Binding Path=PlaybackState.Position}" Duration="{Binding Path=PlaybackState.Duration}" Seek="SeekBar_OnSeek">
                     <shared:SeekBar.OverlayOpacity>
                         <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
                             <GradientStop Offset="0" Color="#20000000"/>
@@ -86,7 +86,7 @@
                         <Style TargetType="Button" BasedOn="{StaticResource FlatButton}">
                             <Setter Property="Content" Value="4"/>
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding Path=TimeSource.IsPlaying}" Value="True">
+                                <DataTrigger Binding="{Binding Path=PlaybackState.IsPlaying}" Value="True">
                                     <Setter Property="Content" Value=";"/>
                                 </DataTrigger>
                             </Style.Triggers>

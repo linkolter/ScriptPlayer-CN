@@ -34,7 +34,7 @@ namespace ScriptPlayer.Dialogs
             }
 
             Result = TimeSpan.FromSeconds(value);
-            DialogResult = true;
+            InlineDialogService.Complete(this, true);
         }
 
         private void TimeShiftDialog_OnLoaded(object sender, RoutedEventArgs e)

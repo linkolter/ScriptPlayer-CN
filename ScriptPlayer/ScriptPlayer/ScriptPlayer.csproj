@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -47,6 +47,12 @@
   <PropertyGroup>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
+  <ItemGroup>
+    <Content Include="Runtime\ffmpeg.exe"><Link>ffmpeg.exe</Link><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
+    <Content Include="Runtime\libmpv-2.dll"><Link>libmpv-2.dll</Link><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
+    <Content Include="Licenses\FFmpeg.txt"><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
+    <Content Include="Licenses\MPV-来源与许可.txt"><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
+  </ItemGroup>
   <ItemGroup>
     <Reference Include="FMUtils.KeyboardHook, Version=1.0.140.2145, Culture=neutral, PublicKeyToken=1acd76c568cde84e, processorArchitecture=MSIL">
       <HintPath>..\packages\FMUtils.KeyboardHook.1.0.140.2145\lib\net40-Client\FMUtils.KeyboardHook.dll</HintPath>
@@ -135,7 +141,12 @@
     <Reference Include="System.Web" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
+    <Reference Include="System.Security" />
     <Reference Include="System.Core" />
+    <Reference Include="netstandard">
+      <HintPath>$(TargetFrameworkRootPath).NETFramework\v4.8\Facades\netstandard.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="System.Xaml">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
@@ -176,6 +187,16 @@
     <Compile Include="Dialogs\EditMetaDataDialog.xaml.cs">
       <DependentUpon>EditMetaDataDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Dialogs\NfoEditorDialog.xaml.cs">
+      <DependentUpon>NfoEditorDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Dialogs\ScriptVariantSelectionDialog.xaml.cs">
+      <DependentUpon>ScriptVariantSelectionDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Metadata\EroScriptsMetadataClient.cs" />
+    <Compile Include="Metadata\NfoMetadata.cs" />
+    <Compile Include="Localization\ChineseLocalization.cs" />
+    <Compile Include="Localization\ChineseTagTranslator.cs" />
     <Compile Include="Dialogs\FunstimDeviceSelector.xaml.cs">
       <DependentUpon>FunstimDeviceSelector.xaml</DependentUpon>
     </Compile>
@@ -194,6 +215,11 @@
     <Compile Include="Dialogs\RenameDialog.xaml.cs">
       <DependentUpon>RenameDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Controls\VideoOverlayHost.cs" />
+    <Compile Include="Controls\QuickConnectHome.xaml.cs">
+      <DependentUpon>QuickConnectHome.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Dialogs\TCodeWifiDialog.cs" />
     <Compile Include="Dialogs\SerialPortSelector.xaml.cs">
       <DependentUpon>SerialPortSelector.xaml</DependentUpon>
     </Compile>
@@ -333,6 +359,7 @@
     <Compile Include="ViewModels\PlaylistEntry.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
     <Compile Include="ViewModels\PlaylistViewModel.cs" />
+    <Compile Include="ViewModels\HomeMediaViewModel.cs" />
     <Compile Include="ViewModels\PositionFilterMode.cs" />
     <Compile Include="ViewModels\RequestFileEventArgs.cs" />
     <Compile Include="ViewModels\TestPatternDefinition.cs" />
@@ -361,6 +388,14 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Dialogs\EditMetaDataDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Dialogs\NfoEditorDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Dialogs\ScriptVariantSelectionDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -484,6 +519,9 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Controls\QuickConnectHome.xaml"><Generator>MSBuild:Compile</Generator><SubType>Designer</SubType></Page>
+    <Page Include="Themes\MediaTheme.xaml"><Generator>MSBuild:Compile</Generator><SubType>Designer</SubType></Page>
+    <Page Include="Themes\MediaTokens.xaml"><Generator>MSBuild:Compile</Generator><SubType>Designer</SubType></Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -492,6 +530,38 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="MainWindow.About.cs" />
+    <Compile Include="MainWindow.Appearance.cs" />
+    <Compile Include="Themes\AppearanceTheme.cs" />
+    <Compile Include="Localization\EnglishUiStrings.cs" />
+    <Compile Include="MainWindow.MediaShell.cs" />
+    <Compile Include="Playback\IMediaEngine.cs" />
+    <Compile Include="Library\RelatedFileRename.cs" />
+    <Compile Include="Playback\PlaybackState.cs" />
+    <Compile Include="Playback\TimelineMarker.cs" />
+    <Compile Include="Playback\TimelinePreviewService.cs" />
+    <Compile Include="ViewModels\TimelineViewModel.cs" />
+    <Compile Include="Controls\PlaybackTimelineView.cs" />
+    <Compile Include="Controls\TimelineMarkerBar.cs" />
+    <Compile Include="Controls\CompactTagStrip.cs" />
+    <Compile Include="MainWindow.Timeline.cs" />
+    <Compile Include="Playback\PlaybackCoordinator.cs" />
+    <Compile Include="Playback\ScriptPlaybackEngine.cs" />
+    <Compile Include="Playback\PlaybackOutputPipeline.cs" />
+    <Compile Include="Playback\PlaybackDeviceOutput.cs" />
+    <Compile Include="Playback\RealtimePlaybackService.cs" />
+    <Compile Include="ViewModels\MainViewModel.Realtime.cs" />
+    <Compile Include="Playback\TimeSourceMediaEngine.cs" />
+    <Compile Include="ViewModels\MainViewModel.Playback.cs" />
+    <Compile Include="MainWindow.PlaybackList.cs" />
+    <Compile Include="MainWindow.UnifiedSettings.cs" />
+    <Compile Include="MainWindow.PlaybackChrome.cs" />
+    <Compile Include="Dialogs\SettingsDialog.Unified.cs" />
+    <Compile Include="Controls\MediaSeekBar.cs" />
+    <Compile Include="Controls\HeatMapSeekBar.cs" />
+    <Compile Include="Settings\HandyCredentialStore.cs" />
+    <Compile Include="Controls\InlineFlyout.cs" />
+    <Compile Include="InlineDialogService.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>

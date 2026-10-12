@@ -70,12 +70,12 @@ namespace ScriptPlayer.Dialogs
                 return;
             }
 
-            DialogResult = true;
+            InlineDialogService.Complete(this, true);
         }
 
         private void btnCancel_Click(object sender, RoutedEventArgs e)
         {
-            DialogResult = false;
+            InlineDialogService.Complete(this, false);
         }
 
         private void btnSelectPath_Click(object sender, RoutedEventArgs e)

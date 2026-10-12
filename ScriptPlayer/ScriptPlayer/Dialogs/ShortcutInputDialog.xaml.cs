@@ -34,7 +34,7 @@ namespace ScriptPlayer.Dialogs
             Shortcut = shortcut;
 
             e.CancelProcessing = true;
-            DialogResult = true;
+            InlineDialogService.Complete(this, true);
         }
 
         private void ShortcutInputDialog_OnPreviewKeyDown(object sender, KeyEventArgs e)
@@ -50,9 +50,14 @@ namespace ScriptPlayer.Dialogs
             Shortcut = shortcut;
           
             e.Handled = true;
-            DialogResult = true;
+            InlineDialogService.Complete(this, true);
         }
 
+        internal void PrepareInlineInput(FrameworkElement content)
+        {
+            content.Focusable=true;content.PreviewKeyDown+=ShortcutInputDialog_OnPreviewKeyDown;
+            content.MouseDown+=Window_MouseDown;content.MouseWheel+=Window_MouseWheel;content.Focus();
+        }
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             GlobalCommandManager.PreviewKeyReceived -= GlobalCommandManagerOnPreviewKeyReceived;
@@ -64,7 +69,7 @@ namespace ScriptPlayer.Dialogs
             e.Handled = true;
 
             Shortcut = shortcut;
-            DialogResult = true;
+            InlineDialogService.Complete(this, true);
         }
 
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
@@ -73,7 +78,7 @@ namespace ScriptPlayer.Dialogs
             e.Handled = true;
 
             Shortcut = shortcut;
-            DialogResult = true;
+            InlineDialogService.Complete(this, true);
         }
     }
 }

@@ -470,7 +470,7 @@ namespace ScriptPlayer.Shared
 
         private readonly object _cancelLocker = new object();
 
-        public static ImageSource LoadFirst(Stream stream)
+        public static ImageSource LoadFirst(Stream stream, int maxPixelWidth = 0, int maxPixelHeight = 0)
         {
             GifBitmapDecoder decoder = new GifBitmapDecoder(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.None);
 
@@ -502,7 +502,18 @@ namespace ScriptPlayer.Shared
                 dc.DrawImage(bitmapFrame, gifFrame.PartialRect);
             }
 
-            RenderTargetBitmap bitmap = new RenderTargetBitmap(pixelWidth, pixelHeight, 96, 96, PixelFormats.Pbgra32);
+            double scale = 1.0;
+            if (maxPixelWidth > 0 && pixelWidth > maxPixelWidth)
+                scale = Math.Min(scale, (double)maxPixelWidth / pixelWidth);
+            if (maxPixelHeight > 0 && pixelHeight > maxPixelHeight)
+                scale = Math.Min(scale, (double)maxPixelHeight / pixelHeight);
+
+            if (scale < 1.0)
+                drawingVisual.Transform = new ScaleTransform(scale, scale);
+
+            int renderWidth = Math.Max(1, (int)Math.Round(pixelWidth * scale));
+            int renderHeight = Math.Max(1, (int)Math.Round(pixelHeight * scale));
+            RenderTargetBitmap bitmap = new RenderTargetBitmap(renderWidth, renderHeight, 96, 96, PixelFormats.Pbgra32);
             bitmap.Render(drawingVisual);
             bitmap.Freeze();
 

@@ -4,11 +4,14 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" Loaded="TimeShiftDialog_OnLoaded"
-        Title="Shift Script" Height="165.649" Width="246.73" WindowStyle="ToolWindow" WindowStartupLocation="CenterOwner">
-    <Grid>
-        <TextBlock Margin="10,10,10,67" TextWrapping="Wrap" Text="Enter the amount of seconds that the script will be shifted. Positive values mean the script will execute later."/>
-        <TextBox x:Name="txtValue" Margin="10,0,10,35" TextWrapping="Wrap" Text="+10.0" Height="23" VerticalAlignment="Bottom"/>
-        <Button Content="Ok" IsDefault="True" HorizontalAlignment="Right" Margin="0,0,91,10" VerticalAlignment="Bottom" Width="76" Click="btnOk_Click"/>
-        <Button Content="Cancel" IsCancel="True" HorizontalAlignment="Right" Margin="0,0,10,10" VerticalAlignment="Bottom" Width="76"/>
+        Title="Shift Script" Height="240" Width="360" MinWidth="260" WindowStyle="ToolWindow" WindowStartupLocation="CenterOwner">
+    <Grid Margin="12">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Margin="0,0,0,16" TextWrapping="Wrap" Text="Enter the amount of seconds that the script will be shifted. Positive values mean the script will execute later."/>
+        <TextBox x:Name="txtValue" Grid.Row="1" TextWrapping="Wrap" Text="+10.0" MinHeight="36" Margin="0,0,0,16"/>
+        <WrapPanel Grid.Row="2" HorizontalAlignment="Right">
+            <Button Content="Ok" IsDefault="True" MinHeight="36" MinWidth="88" Margin="0,0,8,0" Click="btnOk_Click"/>
+            <Button Content="Cancel" IsCancel="True" MinHeight="36" MinWidth="88"/>
+        </WrapPanel>
     </Grid>
 </Window>

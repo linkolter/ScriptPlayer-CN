@@ -57,5 +57,11 @@ namespace ScriptPlayer.Shared
                 OnDisconnected(e);
             }
         }
+
+        public override Task StopRealtimeAsync()
+        {
+            EmptyQueue();
+            return _buttplugAdapter.StopAsync(Device);
+        }
     }
 }

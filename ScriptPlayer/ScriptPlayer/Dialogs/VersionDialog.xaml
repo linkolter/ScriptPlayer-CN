@@ -4,18 +4,23 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ScriptPlayer.Dialogs"
-        mc:Ignorable="d" Loaded="VersionDialog_OnLoaded"
+        mc:Ignorable="d"
         DataContext="{Binding RelativeSource={RelativeSource Self}, Path=ViewModel}"
-        Title="Version" Height="254.873" Width="383.898" WindowStyle="ToolWindow" WindowStartupLocation="CenterOwner">
-    <Grid>
-        <Image RenderOptions.BitmapScalingMode="HighQuality" HorizontalAlignment="Left" Height="159" Margin="10,10,0,0" VerticalAlignment="Top" Width="100" Source="/ScriptPlayer;component/Images/ScriptPlayerIcon.png"/>
-        <TextBlock HorizontalAlignment="Left" Margin="115,10,0,0" TextWrapping="Wrap" Text="ScriptPlayer" VerticalAlignment="Top" Width="167"/>
-        <TextBlock HorizontalAlignment="Left" Margin="115,31,0,0" TextWrapping="Wrap" Text="Installed Version:" VerticalAlignment="Top"/>
-        <TextBlock HorizontalAlignment="Left" Margin="115,52,0,0" TextWrapping="Wrap" Text="Latest Version:" VerticalAlignment="Top"/>
-        <TextBlock HorizontalAlignment="Left" Margin="245,31,0,0" TextWrapping="Wrap" Text="{Binding InstalledVersion}" VerticalAlignment="Top" Width="121"/>
-        <TextBlock HorizontalAlignment="Left" Margin="245,52,0,0" TextWrapping="Wrap" Text="{Binding LatestVersion}" VerticalAlignment="Top" Width="121"/>
-        <Button Command="{Binding DownloadLatestVersionCommand}" Content="Download" Margin="115,0,10,10" VerticalAlignment="Bottom" Height="29"/>
-        <TextBlock Text="{Binding VersionText}" HorizontalAlignment="Left" Margin="115,94,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="251" TextAlignment="Center"/>
-        <Button Command="{Binding CheckForLatestVersionCommand}" Content="Check Again (Include Pre-Releases)" Margin="116,0,10,44" Height="29" VerticalAlignment="Bottom"/>
+        Title="关于 ScriptPlayer 汉化版" Height="285" Width="470" ResizeMode="NoResize" WindowStyle="ToolWindow" WindowStartupLocation="CenterOwner">
+    <Grid Margin="18">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="115"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Image RenderOptions.BitmapScalingMode="HighQuality" Height="150" Width="100" VerticalAlignment="Top" Source="/ScriptPlayer;component/Images/ScriptPlayerIcon.png"/>
+        <StackPanel Grid.Column="1" Margin="18,3,0,0">
+            <TextBlock Text="ScriptPlayer 汉化版" FontSize="22" FontWeight="DemiBold"/>
+            <TextBlock Text="汉化版" FontSize="18" Margin="0,12,0,0"/>
+            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                <TextBlock Text="版本：" FontWeight="DemiBold"/>
+                <TextBlock Text="{Binding InstalledVersion}"/>
+            </StackPanel>
+        </StackPanel>
+        <Button Grid.ColumnSpan="2" Content="确定" IsCancel="True" HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="90" Height="30"/>
     </Grid>
 </Window>

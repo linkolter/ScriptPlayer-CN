@@ -85,7 +85,7 @@ namespace ScriptPlayer.Dialogs
                 ConversionMode = SelectedMode
             };
 
-            DialogResult = true;
+            InlineDialogService.Complete(this, true);
         }
     }
 }

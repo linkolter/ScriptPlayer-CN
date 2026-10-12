@@ -37,6 +37,12 @@ namespace ScriptPlayer.ViewModels
 
         public ScriptplayerCommand DisconnectButtplugCommand { get; set; }
 
+        public ScriptplayerCommand ConnectTCodeCommand { get; set; }
+
+        public ScriptplayerCommand ConnectTCodeWifiCommand { get; set; }
+
+        public ScriptplayerCommand DisconnectTCodeCommand { get; set; }
+
         public ScriptplayerCommand ToggleFullScreenCommand { get; set; }
 
         public ScriptplayerCommand ConnectHandyDirectlyCommand { get; set; }
@@ -274,6 +280,24 @@ namespace ScriptPlayer.ViewModels
                 DisplayText = "Disconnect Buttplug"
             };
 
+            ConnectTCodeCommand = new ScriptplayerCommand(ConnectTCodeDevice)
+            {
+                CommandId = "ConnectTCodeDevice",
+                DisplayText = "连接 TCode / OSR2 / SR6"
+            };
+
+            ConnectTCodeWifiCommand = new ScriptplayerCommand(ConnectTCodeWifiDevice)
+            {
+                CommandId = "ConnectTCodeWifiDevice",
+                DisplayText = "连接 TCode / OSR6 / SR6 Wi-Fi"
+            };
+
+            DisconnectTCodeCommand = new ScriptplayerCommand(DisconnectTCodeDevice)
+            {
+                CommandId = "DisconnectTCodeDevice",
+                DisplayText = "断开 TCode 设备"
+            };
+
             StartScanningButtplugCommand = new ScriptplayerCommand(StartScanningButtplug)
             {
                 CommandId = "StartScanningButtplug",
@@ -341,6 +365,9 @@ namespace ScriptPlayer.ViewModels
             GlobalCommandManager.RegisterCommand(ConnectHandyDirectlyCommand);
             GlobalCommandManager.RegisterCommand(ConnectButtplugCommand);
             GlobalCommandManager.RegisterCommand(DisconnectButtplugCommand);
+            GlobalCommandManager.RegisterCommand(ConnectTCodeCommand);
+            GlobalCommandManager.RegisterCommand(ConnectTCodeWifiCommand);
+            GlobalCommandManager.RegisterCommand(DisconnectTCodeCommand);
             GlobalCommandManager.RegisterCommand(StartScanningButtplugCommand);
             GlobalCommandManager.RegisterCommand(SkipToNextEventCommand);
             GlobalCommandManager.RegisterCommand(TogglePlaybackCommand);

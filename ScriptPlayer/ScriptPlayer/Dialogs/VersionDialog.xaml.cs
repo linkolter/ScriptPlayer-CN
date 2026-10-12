@@ -22,10 +22,5 @@ namespace ScriptPlayer.Dialogs
             ViewModel = viewModel;
             InitializeComponent();
         }
-
-        private void VersionDialog_OnLoaded(object sender, RoutedEventArgs e)
-        {
-            ViewModel.CheckIfYouHaventAlready();
-        }
     }
 }

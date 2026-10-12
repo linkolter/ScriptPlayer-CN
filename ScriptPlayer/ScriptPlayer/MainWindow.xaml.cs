@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
@@ -12,6 +12,7 @@ using Microsoft.WindowsAPICodePack.Dialogs;
 using ScriptPlayer.Dialogs;
 using ScriptPlayer.Shared;
 using ScriptPlayer.ViewModels;
+using ScriptPlayer.Localization;
 using ScriptPlayer.Generators;
 using ScriptPlayer.Shared.Classes;
 using Application = System.Windows.Application;
@@ -40,6 +41,7 @@ namespace ScriptPlayer
         }
 
         private WindowStateModel _windowStateModel;
+        private ScriptPlayer.Controls.VideoOverlayHost _videoOverlayHost;
 
         private DateTime _doubleClickTimeStamp = DateTime.MinValue;
         
@@ -58,6 +60,9 @@ namespace ScriptPlayer
 
             SaveSidePanels(ViewModel.IsFullscreen);
 
+            DisposeMediaShell();
+            ViewModel.PropertyChanged -= OverlayStateChanged;
+            _videoOverlayHost?.Dispose();
             ViewModel.Dispose();
         }
 
@@ -66,8 +71,27 @@ namespace ScriptPlayer
             ViewModel.Unload();
         }
 
+        private void MainWindow_OnPositionChanged(object sender, EventArgs e)
+        {
+            if (CaptionMaximizeButton != null) CaptionMaximizeButton.Content = WindowState == WindowState.Maximized ? "\uE923" : "\uE922";
+            RefreshVideoOverlayPosition();
+        }
+
+        private void MainWindow_OnSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            RefreshVideoOverlayPosition();
+            if (shellReady) { UpdateResponsiveLayout(); UpdateFloatingLayout(); }
+        }
+
+        private void RefreshVideoOverlayPosition()
+        {
+            _videoOverlayHost?.Refresh();
+        }
+
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            ChineseLocalization.TranslateTree(this);
+
             ViewModel.RequestToggleFullscreen += ViewModelOnRequestToggleFullscreen;
             ViewModel.RequestSetFullscreen += ViewModelOnRequestSetFullscreen;
             ViewModel.RequestButtplugUrl += ViewModelOnRequestButtplugUrl;
@@ -87,6 +111,7 @@ namespace ScriptPlayer
             ViewModel.RequestScriptShiftTimespan += ViewModelOnRequestScriptShiftTimespan;
             ViewModel.RequestSection += ViewModelOnRequestSection;
             ViewModel.RequestGeneratorSettings += ViewModelOnRequestGeneratorSettings;
+            ViewModel.RequestScriptVariantSelection += ViewModelOnRequestScriptVariantSelection;
 
             ViewModel.RequestShowGeneratorProgressDialog += ViewModelOnRequestShowGeneratorProgressDialog;
             ViewModel.RequestActivate += ViewModelOnRequestActivate;
@@ -101,6 +126,7 @@ namespace ScriptPlayer
             ViewModel.Beat += ViewModel_Beat;
 
             ViewModel.VideoPlayer = VideoPlayer;
+            ViewModel.MpvVideoPlayer = MpvVideoPlayer;
             ViewModel.SubtitleDisplay = subtitleDisplay;
             ViewModel.Load();
 
@@ -112,12 +138,11 @@ namespace ScriptPlayer
             }
 
             ViewModel.SetMainWindow(this);
+            _videoOverlayHost = new ScriptPlayer.Controls.VideoOverlayHost(this, GridVideo, VideoOverlayLayer,
+                () => currentPage == "player" && ViewModel.PlaybackMode == PlaybackMode.Mpv && !ViewModel.ShowBanner);
+            ViewModel.PropertyChanged += OverlayStateChanged;
             
-            var hideonhoverDescriptor = DependencyPropertyDescriptor.FromProperty(HideOnHover.IsActiveProperty, typeof(Grid));
-            hideonhoverDescriptor.AddValueChanged(GridPlaylist, HideOnHoverChanged);
-            hideonhoverDescriptor.AddValueChanged(GridSettings, HideOnHoverChanged);
-            hideonhoverDescriptor.AddValueChanged(MnuMain, HideOnHoverChanged);
-            hideonhoverDescriptor.AddValueChanged(PlayerControls, HideOnHoverChanged);
+            InitializeMediaShell();
 
             UpdateVideoLayout();
         }
@@ -150,26 +175,25 @@ namespace ScriptPlayer
 
         private void UpdateVideoRows()
         {
-            bool hideMenu = HideOnHover.GetIsActive(MnuMain);
-            bool hideControls = HideOnHover.GetIsActive(PlayerControls);
-
-            int gridRow = hideMenu ? 0 : 1;
-            int grodRowSpan = 3 - (hideMenu ? 0 : 1) - (hideControls ? 0 : 1);
-
-            Grid.SetRow(GridVideo, gridRow);
-            Grid.SetRowSpan(GridVideo, grodRowSpan);
+            Grid.SetRow(GridVideo, 0);
+            Grid.SetRowSpan(GridVideo, 2);
         }
 
         private void UpdateVideoColumns()
         {
-            bool hidePlaylist = HideOnHover.GetIsActive(GridPlaylist);
-            bool hideSettings = HideOnHover.GetIsActive(GridSettings);
+            Grid.SetColumn(GridVideo, 1);
+            Grid.SetColumnSpan(GridVideo, 1);
+        }
 
-            int gridColumn = hidePlaylist ? 0 : 1;
-            int gridColumnSpan = 3 - (hidePlaylist ? 0 : 1) - (hideSettings ? 0 : 1);
+        private void OverlayStateChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(MainViewModel.PlaybackMode) || e.PropertyName == nameof(MainViewModel.ShowBanner))
+                RefreshVideoOverlayPosition();
+        }
 
-            Grid.SetColumn(GridVideo, gridColumn);
-            Grid.SetColumnSpan(GridVideo, gridColumnSpan);
+        private void ShowPlayerControls_Click(object sender, RoutedEventArgs e)
+        {
+            HideOnHover.SetIsActive(PlayerControls, false);
         }
 
         private void ViewModelOnRequestGeneratorSettings(object sender, RequestEventArgs<GeneratorSettingsViewModel> eventArgs)
@@ -210,15 +234,8 @@ namespace ScriptPlayer
             eventArgs.Handled = true;
         }
 
-        private void ViewModelOnRequestShowDeviceManager(object sender, EventArgs eventArgs)
-        {
-            ShowDevices();
-        }
-
-        private void ViewModel_Beat(object sender, EventArgs e)
-        {
-            //VideoPlayer.Zoom = VideoPlayer.Zoom == 1 ? 1.1 : 1;
-        }
+        private void ViewModelOnRequestShowDeviceManager(object sender, EventArgs eventArgs) => ShowDevices();
+        private void ViewModel_Beat(object sender, EventArgs e) { }
 
         private void ViewModelOnRequestHeatmapGeneratorSettings(object sender, RequestEventArgs<HeatmapGeneratorSettings> eventArgs)
         {
@@ -237,17 +254,12 @@ namespace ScriptPlayer
             eventArgs.Handled = true;
         }
 
-        private void ViewModelOnRequestShowGeneratorProgressDialog(object sender, EventArgs eventArgs)
-        {
-            ShowGeneratorProgress();
-        }
+        private void ViewModelOnRequestShowGeneratorProgressDialog(object sender, EventArgs eventArgs) => ShowGeneratorProgress();
 
         private void ViewModelOnRequestThumbnailBannerGeneratorSettings(object sender, RequestEventArgs<ThumbnailBannerGeneratorSettings> eventArgs)
         {
-            ThumbnailBannerGeneratorSettingsDialog dialog = new ThumbnailBannerGeneratorSettingsDialog(eventArgs.Value) { Owner = this };
-            if (dialog.ShowDialog() != true)
-                return;
-
+            var dialog = new ThumbnailBannerGeneratorSettingsDialog(eventArgs.Value) { Owner = this };
+            if (dialog.ShowDialog() != true) return;
             eventArgs.Value = dialog.Settings;
             eventArgs.Handled = true;
         }
@@ -269,10 +281,8 @@ namespace ScriptPlayer
 
         private void ShowSettings(string settingsId)
         {
-            SettingsDialog settings = new SettingsDialog(ViewModel.Settings, settingsId) { Owner = this };
-            if (settings.ShowDialog() != true) return;
-
-            ViewModel.ApplySettings(settings.Settings);
+            NavigateTo("settings");
+            if (!string.IsNullOrEmpty(settingsId)) OpenAdvancedSettings(settingsId);
         }
 
         private void ViewModelOnRequestThumbnailGeneratorSettings(object sender, RequestEventArgs<ThumbnailGeneratorSettings> eventArgs)
@@ -310,19 +320,7 @@ namespace ScriptPlayer
 
         private PanelsState GetPanelsState()
         {
-            return new PanelsState
-            {
-                PlaylistWidth = GirdPlaylistInner.Width,
-                SettingsWidth = GridSettingsInner.Width,
-
-                HidePlaylist = HideOnHover.GetIsActive(GridPlaylist),
-                HideSettings = HideOnHover.GetIsActive(GridSettings),
-                HideMenu = HideOnHover.GetIsActive(MnuMain),
-                HideControls = HideOnHover.GetIsActive(PlayerControls),
-
-                ExpandPlaylist = ExpanderPlaylist.IsExpanded,
-                ExpandSettings = ExpanderSettings.IsExpanded
-            };
+            return new PanelsState { PlaylistWidth = 260, SettingsWidth = 300 };
         }
 
         private void RestoreWindowState(WindowStateModel windowStateModel)
@@ -352,19 +350,7 @@ namespace ScriptPlayer
 
         private void RestoreSidePanels(PanelsState panelsState)
         {
-            if (panelsState == null)
-                return;
-
-            GirdPlaylistInner.Width = panelsState.PlaylistWidth;
-            GridSettingsInner.Width = panelsState.SettingsWidth;
-
-            HideOnHover.SetIsActive(GridPlaylist, panelsState.HidePlaylist);
-            HideOnHover.SetIsActive(GridSettings, panelsState.HideSettings);
-            HideOnHover.SetIsActive(MnuMain, panelsState.HideMenu);
-            HideOnHover.SetIsActive(PlayerControls, panelsState.HideControls);
-
-            ExpanderPlaylist.IsExpanded = panelsState.ExpandPlaylist;
-            ExpanderSettings.IsExpanded = panelsState.ExpandSettings;
+            // Page navigation replaces the old auto-hiding side panels.
         }
 
         private void ViewModelOnRequestGetWindowState(object sender, RequestEventArgs<WindowStateModel> e)
@@ -528,7 +514,26 @@ namespace ScriptPlayer
 
         private void ViewModelOnRequestMessageBox(object sender, MessageBoxEventArgs e)
         {
-            e.Result = MessageBox.Show(this, e.Text, e.Title, e.Buttons, e.Icon);
+            e.Result = MessageBox.Show(this, ChineseLocalization.Translate(e.Text),
+                ChineseLocalization.Translate(e.Title), e.Buttons, e.Icon);
+            e.Handled = true;
+        }
+
+        private void ViewModelOnRequestScriptVariantSelection(object sender, RequestEventArgs<string[], string> e)
+        {
+            ScriptVariantSelectionDialog dialog = new ScriptVariantSelectionDialog(e.ValueIn, e.ValueOut)
+            {
+                Owner = this
+            };
+
+            if (dialog.ShowDialog() != true)
+            {
+                e.Handled = true;
+                e.ValueOut = null;
+                return;
+            }
+
+            e.ValueOut = dialog.SelectedScript;
             e.Handled = true;
         }
 
@@ -560,6 +565,8 @@ namespace ScriptPlayer
             bool currentlyFullScreen = ViewModel.IsFullscreen;
 
             ViewModel.IsFullscreen = isFullscreen;
+            CaptionBar.Visibility = isFullscreen ? Visibility.Collapsed : Visibility.Visible;
+            System.Windows.Shell.WindowChrome.GetWindowChrome(this).CaptionHeight = isFullscreen ? 0 : 32;
 
             SaveSidePanels(currentlyFullScreen);
 
@@ -576,6 +583,8 @@ namespace ScriptPlayer
 
                 //GridVideo.Visibility = Visibility.Hidden;
 
+                var fromDevice = PresentationSource.FromVisual(this).CompositionTarget.TransformFromDevice;
+                screenBounds = new Rect(fromDevice.Transform(screenBounds.TopLeft), fromDevice.Transform(screenBounds.BottomRight));
                 Width = screenBounds.Width;
                 Height = screenBounds.Height;
                 Left = screenBounds.Left;
@@ -606,7 +615,10 @@ namespace ScriptPlayer
             }
 
             ViewModel.IsFullscreen = isFullscreen;
+            CaptionBar.Visibility = isFullscreen ? Visibility.Collapsed : Visibility.Visible;
+            System.Windows.Shell.WindowChrome.GetWindowChrome(this).CaptionHeight = isFullscreen ? 0 : 32;
             RestoreSidePanels(true, isFullscreen);
+            if (ShellRoot != null) { if (isFullscreen) NavigateTo("player"); UpdateShellFullscreen(); }
         }
 
         public Rectangle GetWindowRectangle()
@@ -623,9 +635,8 @@ namespace ScriptPlayer
 
         private Rect FindScreenWithMostOverlap()
         {
-            Rectangle windowBounds = GetWindowRectangle();
-
-            Rectangle screenBounds = System.Windows.Forms.Screen.FromRectangle(windowBounds).Bounds;
+            var handle = new WindowInteropHelper(this).Handle;
+            Rectangle screenBounds = System.Windows.Forms.Screen.FromHandle(handle).Bounds;
 
             return new Rect(screenBounds.X, screenBounds.Y, screenBounds.Width, screenBounds.Height);
         }
@@ -675,6 +686,9 @@ namespace ScriptPlayer
                 {
                     case MouseButton.Left:
                     {
+                        // Consume the routed event before awaiting double-click detection.
+                        // Otherwise the overlay and its parent both toggle playback.
+                        e.Handled = true;
                         VideoPlayer_OnMouseLeftButtonDown(sender, e);
                         break;
                     }
@@ -749,6 +763,7 @@ namespace ScriptPlayer
 
         protected override void OnMouseWheel(MouseWheelEventArgs e)
         {
+            if (InlineDialogService.IsOpen || currentPage == "settings" || NavigationRail.IsMouseOver) { base.OnMouseWheel(e); return; }
             bool handled = GlobalCommandManager.ProcessInput(e);
 
             if (handled)
@@ -766,6 +781,9 @@ namespace ScriptPlayer
 
         private void MainWindow_OnPreviewKeyDown(object sender, KeyEventArgs e)
         {
+            if (InlineDialogService.IsOpen) return;
+            if (e.Key == Key.Escape && ViewModel.IsFullscreen) { SetFullscreen(false, true); e.Handled = true; return; }
+            if (Keyboard.FocusedElement is System.Windows.Controls.Primitives.TextBoxBase || Keyboard.FocusedElement is PasswordBox || Keyboard.FocusedElement is ComboBox) return;
             Key[] modifiers = {Key.LeftAlt, Key.LeftCtrl, Key.LeftShift, Key.RightAlt, Key.RightCtrl, Key.RightShift};
 
             if (modifiers.Contains(e.Key))
@@ -784,67 +802,25 @@ namespace ScriptPlayer
             ShowPlaylist();
         }
 
-        private void ShowDevices()
+        private async void ShowDevices()
         {
-            DeviceManagerDialog existing = Application.Current.Windows.OfType<DeviceManagerDialog>().FirstOrDefault();
-
-            if (existing == null || !existing.IsLoaded)
-            {
-                DeviceManagerDialog deviceManager = new DeviceManagerDialog(ViewModel.Devices);
-                deviceManager.Show();
-            }
-            else
-            {
-                if (existing.WindowState == WindowState.Minimized)
-                    existing.WindowState = WindowState.Normal;
-
-                existing.Activate();
-                existing.Focus();
-            }
+            await InlineDialogService.ShowAsync(new DeviceManagerDialog(ViewModel.Devices));
         }
 
-        private void ShowGeneratorProgress()
+        private async void ShowGeneratorProgress()
         {
-            GeneratorProgressDialog existing = Application.Current.Windows.OfType<GeneratorProgressDialog>().FirstOrDefault();
-
-            if (existing == null || !existing.IsLoaded)
-            {
-                GeneratorProgressDialog progressDialog = new GeneratorProgressDialog(ViewModel);
-                progressDialog.Show();
-            }
-            else
-            {
-                if (existing.WindowState == WindowState.Minimized)
-                    existing.WindowState = WindowState.Normal;
-
-                existing.Activate();
-                existing.Focus();
-            }
+            await InlineDialogService.ShowAsync(new GeneratorProgressDialog(ViewModel));
         }
 
         private void ShowPlaylist()
         {
-            PlaylistWindow existing = Application.Current.Windows.OfType<PlaylistWindow>().FirstOrDefault();
-
-            if (existing == null || !existing.IsLoaded)
-            {
-                PlaylistWindow playlist = new PlaylistWindow(ViewModel);
-                playlist.Show();
-            }
-            else
-            {
-                if (existing.WindowState == WindowState.Minimized)
-                    existing.WindowState = WindowState.Normal;
-
-                existing.Activate();
-                existing.Focus();
-            }
+            NavigateTo("library");
         }
 
-        private void mnuVersion_Click(object sender, RoutedEventArgs e)
+        private async void mnuVersion_Click(object sender, RoutedEventArgs e)
         {
             VersionDialog dialog = new VersionDialog(ViewModel.Version) { Owner = this };
-            dialog.ShowDialog();
+            await InlineDialogService.ShowAsync(dialog);
         }
 
         private void mnuDocs_Click(object sender, RoutedEventArgs e)
@@ -862,6 +838,7 @@ namespace ScriptPlayer
             if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
 
             string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+            e.Handled = true;
             ViewModel.FilesDropped(files);
         }
 

@@ -14,6 +14,23 @@ namespace ScriptPlayer.Shared
     {
         public delegate void ClickedEventHandler(object sender, double relative, TimeSpan absolute, int downMoveUp);
 
+        public static readonly DependencyProperty ShowPreviewProperty = DependencyProperty.Register(
+            nameof(ShowPreview), typeof(bool), typeof(SeekBar), new PropertyMetadata(true, (d, e) => { if (!(bool)e.NewValue) ((SeekBar)d).ClosePopup(); }));
+        public bool ShowPreview { get => (bool)GetValue(ShowPreviewProperty); set => SetValue(ShowPreviewProperty, value); }
+        public event Action<SeekBar, TimeSpan> HoverChanged;
+        public event Action<SeekBar> HoverEnded;
+
+        public void ResetInteraction(bool completeSeek = false)
+        {
+            bool finish = _down && completeSeek && Duration > TimeSpan.Zero;
+            _down = false;
+            if (finish) OnSeek(GetRelativePosition(ActualWidth * HoverPosition.Divide(Duration)), HoverPosition, 2);
+            if (IsMouseCaptured) ReleaseMouseCapture();
+            ClosePopup();
+            HoverEnded?.Invoke(this);
+            _window = null;
+        }
+
         public static readonly DependencyProperty OverlayProperty = DependencyProperty.Register(
             "Overlay", typeof(Brush), typeof(SeekBar),
             new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
@@ -115,6 +132,8 @@ namespace ScriptPlayer.Shared
         {
             ClipToBounds = true;
             InitializePopup();
+            Unloaded += (s, e) => ResetInteraction(true);
+            IsVisibleChanged += (s, e) => { if (!IsVisible) ResetInteraction(true); };
         }
 
         public Brush Overlay
@@ -146,6 +165,7 @@ namespace ScriptPlayer.Shared
         private static void OnVisualPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             ((SeekBar) d).InvalidateVisual();
+            if (e.Property == DurationProperty && (TimeSpan)e.NewValue <= TimeSpan.Zero) ((SeekBar)d).ResetInteraction();
         }
 
         private void InitializePopup()
@@ -299,8 +319,8 @@ namespace ScriptPlayer.Shared
             if (Duration == TimeSpan.Zero) return;
             if (!_down) return;
 
-            ReleaseMouseCapture();
             _down = false;
+            ReleaseMouseCapture();
             Point p = e.GetPosition(this);
 
             if (IsMouseOver)
@@ -316,7 +336,7 @@ namespace ScriptPlayer.Shared
 
         private void ClosePopup()
         {
-            _popup.IsOpen = false;
+            if (_popup != null) _popup.IsOpen = false;
         }
 
         protected override void OnMouseMove(MouseEventArgs e)
@@ -345,6 +365,7 @@ namespace ScriptPlayer.Shared
                 return;
 
             ClosePopup();
+            HoverEnded?.Invoke(this);
         }
 
         private void UpdatePopup(Point point)
@@ -359,6 +380,8 @@ namespace ScriptPlayer.Shared
             TimeSpan absolutePosition = Duration.Multiply(relativePosition);
 
             HoverPosition = absolutePosition;
+            HoverChanged?.Invoke(this, absolutePosition);
+            if (!ShowPreview) return;
 
             if (Thumbnails != null)
             {
@@ -433,6 +456,16 @@ namespace ScriptPlayer.Shared
             TimeSpan absolutePosition = Duration.Multiply(relativePosition);
 
             OnSeek(relativePosition, absolutePosition, 0);
+        }
+
+        protected override void OnLostMouseCapture(MouseEventArgs e)
+        {
+            base.OnLostMouseCapture(e);
+            if (!_down) return;
+            _down = false;
+            double relative = GetRelativePosition(e.GetPosition(this).X);
+            OnSeek(relative, Duration.Multiply(relative), 2);
+            ClosePopup(); HoverEnded?.Invoke(this);
         }
 
         protected virtual void OnSeek(double relative, TimeSpan absolute, int downMoveUp)

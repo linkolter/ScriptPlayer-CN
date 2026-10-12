@@ -15,11 +15,37 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using JetBrains.Annotations;
 using Microsoft.VisualBasic.FileIO;
+using ScriptPlayer.Localization;
+using ScriptPlayer.Library;
+using ScriptPlayer.Metadata;
+using Newtonsoft.Json;
 using ScriptPlayer.Shared;
 using ScriptPlayer.Shared.Helpers;
 
 namespace ScriptPlayer.ViewModels
 {
+    public sealed class TagFilterOption
+    {
+        public TagFilterOption(string displayName, List<string> rawTags, int count)
+        {
+            DisplayName = displayName;
+            RawTags = rawTags ?? new List<string>();
+            Count = count;
+        }
+
+        public string DisplayName { get; }
+        public List<string> RawTags { get; }
+        public int Count { get; }
+        public bool IsAll => RawTags.Count == 0;
+        public string DisplayText => $"{DisplayName}  ·  {Count}";
+        public override string ToString() => DisplayText;
+
+        public static TagFilterOption CreateAll(int count)
+        {
+            return new TagFilterOption("全部标签", new List<string>(), count);
+        }
+    }
+
     public class PlaylistViewModel : INotifyPropertyChanged, IDisposable
     {
         private static readonly PathComparer PathComparer = new PathComparer();
@@ -33,6 +59,8 @@ namespace ScriptPlayer.ViewModels
         private readonly Dispatcher _dispatcher;
         private readonly Random _rng = new Random();
         private readonly Thread _mediaInfoThread;
+        private readonly DispatcherTimer _filterDebounceTimer;
+        private readonly DispatcherTimer _metadataRefreshTimer;
 
         private bool _disposed;
 
@@ -50,6 +78,10 @@ namespace ScriptPlayer.ViewModels
         private PlaylistEntry _selectedEntry;
 
         private string _filter;
+        private bool _favoritesOnly;
+        private List<TagFilterOption> _availableTags = new List<TagFilterOption>();
+        private TagFilterOption _selectedTagFilter;
+        private int _filterRefreshPending;
         private TimeSpan _totalDuration;
         private TimeSpan _selectedDuration;
         private string _totalDurationString = "0:00:00";
@@ -74,11 +106,16 @@ namespace ScriptPlayer.ViewModels
         public event EventHandler<RequestEventArgs<string>> RequestMediaFileName;
         public event EventHandler<RequestEventArgs<string>> RequestVideoFileName;
         public event EventHandler<RequestEventArgs<string>> RequestScriptFileName;
+        public event EventHandler<RequestEventArgs<string, string[]>> RequestScriptFileNames;
         public event EventHandler<RequestEventArgs<string>> RequestHeatmapFileName;
         public event EventHandler<RequestEventArgs<string>> RequestPreviewFileName;
         public event EventHandler<RequestEventArgs<string, string[]>> RequestAllRelatedFiles;
 
         public event EventHandler<RequestEventArgs<string>> RequestRenameFile;
+        // Rename discovery deliberately bypasses legacy filename de-duplication used by move/delete.
+        public Func<string, string, RelatedFileRenameResult> RenameRelatedFiles { get; set; }
+        public RelatedFileRenameResult LastRenameResult { get; private set; }
+        public string LastRenameReportPath { get; private set; }
         public event EventHandler<RequestEventArgs<string>> RequestDirectory;
 
         public event EventHandler<string[]> RequestGenerateThumbnails;
@@ -113,6 +150,7 @@ namespace ScriptPlayer.ViewModels
             if (_dispatcher == null || DeferLoading)
                 return;
 
+            UpdateAvailableTags();
             UpdateFilter();
             CommandManager.InvalidateRequerySuggested();
             UpdateTotalDuration();
@@ -327,11 +365,45 @@ namespace ScriptPlayer.ViewModels
             {
                 if (value == _filter) return;
                 _filter = value;
+                ScheduleTextFilterRefresh();
+                OnPropertyChanged();
+            }
+        }
+
+
+        public bool FavoritesOnly
+        {
+            get => _favoritesOnly;
+            set
+            {
+                if (value == _favoritesOnly) return;
+                _favoritesOnly = value;
                 UpdateFilter();
                 OnPropertyChanged();
             }
         }
 
+        public List<TagFilterOption> AvailableTags
+        {
+            get => _availableTags;
+            private set
+            {
+                _availableTags = value ?? new List<TagFilterOption>();
+                OnPropertyChanged();
+            }
+        }
+
+        public TagFilterOption SelectedTagFilter
+        {
+            get => _selectedTagFilter;
+            set
+            {
+                if (ReferenceEquals(value, _selectedTagFilter)) return;
+                _selectedTagFilter = value;
+                OnPropertyChanged();
+                UpdateFilter();
+            }
+        }
 
         private PlaylistViewStyle _viewStyle;
         private PlaylistEntry _nonPlaylistEntry;
@@ -352,15 +424,82 @@ namespace ScriptPlayer.ViewModels
             FilteredEntries = FilterEntries(Entries, Filter);
         }
 
+        private void UpdateAvailableTags()
+        {
+            string selectedName = SelectedTagFilter?.DisplayName;
+            List<PlaylistEntry> entries = Entries?.Where(entry => entry != null && !entry.Removed).ToList()
+                ?? new List<PlaylistEntry>();
+
+            Dictionary<string, HashSet<string>> rawTagsByDisplay =
+                new Dictionary<string, HashSet<string>>(StringComparer.CurrentCultureIgnoreCase);
+            Dictionary<string, int> entryCounts =
+                new Dictionary<string, int>(StringComparer.CurrentCultureIgnoreCase);
+
+            foreach (PlaylistEntry entry in entries)
+            {
+                HashSet<string> displayTagsInEntry =
+                    new HashSet<string>(StringComparer.CurrentCultureIgnoreCase);
+
+                foreach (string rawTag in (entry.RawTagItems ?? new List<string>())
+                             .Where(tag => !string.IsNullOrWhiteSpace(tag))
+                             .Distinct(StringComparer.OrdinalIgnoreCase))
+                {
+                    string displayTag = ChineseTagTranslator.Translate(rawTag);
+                    if (string.IsNullOrWhiteSpace(displayTag))
+                        continue;
+
+                    if (!rawTagsByDisplay.TryGetValue(displayTag, out HashSet<string> rawTags))
+                    {
+                        rawTags = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                        rawTagsByDisplay.Add(displayTag, rawTags);
+                    }
+
+                    rawTags.Add(rawTag);
+                    displayTagsInEntry.Add(displayTag);
+                }
+
+                foreach (string displayTag in displayTagsInEntry)
+                    entryCounts[displayTag] = entryCounts.TryGetValue(displayTag, out int count) ? count + 1 : 1;
+            }
+
+            List<TagFilterOption> groups = rawTagsByDisplay
+                .OrderBy(pair => pair.Key, StringComparer.CurrentCultureIgnoreCase)
+                .Select(pair => new TagFilterOption(pair.Key, pair.Value.ToList(), entryCounts[pair.Key]))
+                .ToList();
+
+            groups.Insert(0, TagFilterOption.CreateAll(entries.Count));
+            AvailableTags = groups;
+            _selectedTagFilter = groups.FirstOrDefault(option =>
+                                     string.Equals(option.DisplayName, selectedName,
+                                         StringComparison.CurrentCultureIgnoreCase))
+                                 ?? groups[0];
+            OnPropertyChanged(nameof(SelectedTagFilter));
+        }
+
         private List<PlaylistEntry> FilterEntries(IList<PlaylistEntry> entries, string filter)
         {
             List<PlaylistEntry> filtered = new List<PlaylistEntry>();
 
-            foreach (PlaylistEntry entry in entries)
-                if (MatchesFilter(entry.Shortname, filter))
+            foreach (PlaylistEntry entry in entries ?? new List<PlaylistEntry>())
+                if ((!FavoritesOnly || entry.IsFavorite) && MatchesSelectedTag(entry) &&
+                    (MatchesFilter(entry.Shortname, filter) ||
+                     MatchesFilter(entry.DisplayTitle, filter) ||
+                     MatchesFilter(entry.TagsDisplay, filter) ||
+                     MatchesFilter(entry.RawTagsDisplay, filter) ||
+                     MatchesFilter(entry.TypeDisplay, filter) ||
+                     MatchesFilter(entry.ScriptVariantDisplay, filter)))
                     filtered.Add(entry);
 
             return filtered;
+        }
+
+        private bool MatchesSelectedTag(PlaylistEntry entry)
+        {
+            if (SelectedTagFilter == null || SelectedTagFilter.IsAll)
+                return true;
+
+            return entry.RawTagItems.Any(rawTag => SelectedTagFilter.RawTags.Contains(rawTag,
+                StringComparer.OrdinalIgnoreCase));
         }
 
         private bool MatchesFilter(string text, string filter)
@@ -444,6 +583,20 @@ namespace ScriptPlayer.ViewModels
             SetViewStyleCommand = new RelayCommand<PlaylistViewStyle>(ExecuteSetViewStlye);
 
             _dispatcher = Dispatcher.CurrentDispatcher;
+            _filterDebounceTimer = new DispatcherTimer(DispatcherPriority.Background, _dispatcher)
+            {
+                Interval = TimeSpan.FromMilliseconds(140)
+            };
+            _filterDebounceTimer.Tick += FilterDebounceTimerOnTick;
+
+            _metadataRefreshTimer = new DispatcherTimer(DispatcherPriority.Background, _dispatcher)
+            {
+                Interval = TimeSpan.FromMilliseconds(220)
+            };
+            _metadataRefreshTimer.Tick += MetadataRefreshTimerOnTick;
+
+            UpdateAvailableTags();
+            UpdateFilter();
             _mediaInfoThread = new Thread(MediaInfoLoop);
             _mediaInfoThread.Start();
         }
@@ -656,70 +809,94 @@ namespace ScriptPlayer.ViewModels
 
         private void ExecuteRenameCommand(PlaylistEntry entry)
         {
-            string originalFile = entry.Fullname;
-
-            string[] relatedFiles = GetAllRelatedFiles(originalFile);
-
-            if (relatedFiles == null || relatedFiles.Length == 0)
-                return;
-
-            string commonName = Path.GetFileNameWithoutExtension(originalFile);
+            string commonName = Path.GetFileNameWithoutExtension(entry.Fullname);
             string newCommonName = OnRequestRenameFile(commonName);
-
             if (string.IsNullOrEmpty(newCommonName))
                 return;
-
-            Dictionary<string, string> newNames;
-
-            try
-            {
-                newNames = relatedFiles.ToDictionary(k => k, v => GetNewName(v, newCommonName), PathComparer);
-
-                foreach (string oldFile in relatedFiles)
-                {
-                    if (File.Exists(newNames[oldFile]))
-                    {
-                        MessageBox.Show($"Can't rename!\r\n The file '{newNames[oldFile]}' already exists!", "Rename",
-                            MessageBoxButton.OK, MessageBoxImage.Error);
-
-                        return;
-                    }
-                }
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, "Rename failed", MessageBoxButton.OK, MessageBoxImage.Error);
+            var result = RenameEntry(entry, newCommonName);
+            if (result.Status == RelatedFileRenameStatus.Success && result.Errors.Count == 0 || result.Status == RelatedFileRenameStatus.NoChange)
                 return;
-            }
-
-            string newFileName = "";
-
-            try
-            {
-                foreach (string oldFile in relatedFiles)
-                {
-                    newFileName = newNames[oldFile];
-                    File.Move(oldFile, newFileName);
-                }
-
-                entry.Fullname = newNames[originalFile];
-                entry.Reset();
-                _uncheckedPlaylistEntries.Enqueue(entry);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"An error occured while renaming '{newFileName}':\r\n{ex.Message}", "Rename failed",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            string locations = string.Join("\r\n", result.Plan.Where(p => !string.Equals(p.OriginalPath, p.CurrentPath, StringComparison.Ordinal))
+                .Select(p => p.CurrentPath + " → " + p.OriginalPath));
+            string details = string.Join("\r\n", result.Errors.Select(e => e.Phase + ": " + e.Message));
+            MessageBox.Show("改名结果：" + result.Status + "\r\n" + details
+                + (locations.Length == 0 ? "" : "\r\n尚需恢复（当前 → 原路径）：\r\n" + locations)
+                + (LastRenameReportPath == null ? "" : "\r\n完整路径记录：" + LastRenameReportPath), "关联文件改名",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
         }
 
-        private static string GetNewName(string filePath, string newFileNameWithoutExtension)
+        public RelatedFileRenameResult RenameEntry(PlaylistEntry entry, string newCommonName)
         {
-            string directory = Path.GetDirectoryName(filePath);
-            string extension = Path.GetExtension(filePath);
-
-            return Path.Combine(directory, newFileNameWithoutExtension + extension);
+            if (entry == null) throw new ArgumentNullException(nameof(entry));
+            string originalPath = entry.Fullname;
+            RelatedFileRenameResult result;
+            var affectedEntries = Entries.Concat(new[] { entry }).Distinct().ToList();
+            var selectedCandidates = new Dictionary<PlaylistEntry, string[]>();
+            try
+            {
+                string oldStem = Path.GetFileNameWithoutExtension(originalPath);
+                foreach (var candidate in affectedEntries)
+                {
+                    string selected = candidate.SelectedScriptName;
+                    if (string.IsNullOrEmpty(selected) || !selected.StartsWith(oldStem, StringComparison.OrdinalIgnoreCase)) continue;
+                    var scripts = OnRequestScriptFileNames(candidate.Fullname);
+                    if (scripts == null)
+                    {
+                        string local = Path.Combine(Path.GetDirectoryName(candidate.Fullname), selected);
+                        scripts = File.Exists(local) ? new[] { local } : new string[0];
+                    }
+                    selectedCandidates[candidate] = scripts.Where(p => string.Equals(Path.GetFileName(p), selected, StringComparison.OrdinalIgnoreCase))
+                        .Select(Path.GetFullPath).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+                }
+                result = RenameRelatedFiles != null ? RenameRelatedFiles(originalPath, newCommonName)
+                    : RelatedFileRename.Rename(originalPath, newCommonName, new[] { Path.GetDirectoryName(originalPath) }, null);
+            }
+            catch (Exception ex)
+            {
+                result = new RelatedFileRenameResult { Status = RelatedFileRenameStatus.Rejected, OriginalPath = originalPath, NewStem = newCommonName };
+                result.Errors.Add(new RelatedFileRenameError { Phase = "Discovery", Message = ex.Message });
+            }
+            LastRenameResult = result;
+            LastRenameReportPath = null;
+            // Keep the complete old/new/current mapping for diagnosis and future R10, without migrating history.
+            if (result.Status != RelatedFileRenameStatus.NoChange)
+            {
+                try
+                {
+                    string appData = Environment.GetEnvironmentVariable("APPDATA");
+                    if (string.IsNullOrWhiteSpace(appData) || !Path.IsPathRooted(appData))
+                        throw new IOException("APPDATA must be an absolute path for rename reports.");
+                    string directory = Path.Combine(appData, "ScriptPlayer", "RenameOperations");
+                    Directory.CreateDirectory(directory);
+                    string report = Path.Combine(directory, DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N") + ".json");
+                    using (var stream = new FileStream(report, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                    using (var writer = new StreamWriter(stream)) writer.Write(JsonConvert.SerializeObject(result, Formatting.Indented));
+                    LastRenameReportPath = report;
+                }
+                catch (Exception ex)
+                {
+                    result.Errors.Add(new RelatedFileRenameError { Phase = "Report", Message = "路径记录未能保存；内存结果仍保留：" + ex.Message });
+                    Debug.WriteLine(ex);
+                }
+            }
+            if (result.Status != RelatedFileRenameStatus.Success) return result;
+            // Publish all affected entries only after the entire disk operation committed.
+            foreach (var affected in affectedEntries)
+            {
+                var mapping = result.Plan.FirstOrDefault(p => PathComparer.Equals(p.OriginalPath, affected.Fullname));
+                string selectedScript = affected.SelectedScriptName;
+                string[] candidates;
+                selectedCandidates.TryGetValue(affected, out candidates);
+                var selectedMapping = candidates == null ? null : result.Plan.FirstOrDefault(p => candidates.Contains(p.OriginalPath, StringComparer.OrdinalIgnoreCase));
+                // A same-named script outside this operation can still be the entry's local choice.
+                bool ambiguous = candidates != null && candidates.Any(p => !result.Plan.Any(m => PathComparer.Equals(m.OriginalPath, p)));
+                if (mapping == null && selectedMapping == null) continue;
+                if (mapping != null) affected.Fullname = mapping.TargetPath;
+                affected.Reset();
+                affected.SelectedScriptName = selectedMapping == null || ambiguous ? selectedScript : Path.GetFileName(selectedMapping.TargetPath);
+                _uncheckedPlaylistEntries.Enqueue(affected);
+            }
+            return result;
         }
 
         private static string GetNewPath(string filePath, string newDirectory)
@@ -896,7 +1073,8 @@ namespace ScriptPlayer.ViewModels
                     entry.HasMedia = true;
                     entry.MediaCreationTime = File.GetCreationTime(mediaFile);
 
-                    if (entry.Duration == null)
+                    // EXTINF:0 in an M3U means that the duration has not been scanned yet.
+                    if (entry.Duration == null || entry.Duration.Value <= TimeSpan.Zero)
                     {
                         entry.Duration = MediaHelper.GetDuration(mediaFile);
                         if (entry.Duration != null)
@@ -910,7 +1088,8 @@ namespace ScriptPlayer.ViewModels
                     entry.MediaCreationTime = DateTime.MinValue;
                 }
 
-                string scriptFile = OnRequestScriptFileName(entry.Fullname);
+                string[] scriptVariants = OnRequestScriptFileNames(entry.Fullname) ?? new string[0];
+                string scriptFile = scriptVariants.FirstOrDefault() ?? OnRequestScriptFileName(entry.Fullname);
                 if (!string.IsNullOrWhiteSpace(scriptFile) && File.Exists(scriptFile))
                 {
                     entry.HasScript = true;
@@ -934,6 +1113,9 @@ namespace ScriptPlayer.ViewModels
                     entry.Preview = GetPreviewImage(preview);
                 }
 
+                entry.LoadLocalMetadata(mediaFile, scriptFile, scriptVariants);
+                ScheduleFilterRefresh();
+
                 entry.UpdateStatus();
             }
         }
@@ -944,7 +1126,7 @@ namespace ScriptPlayer.ViewModels
             {
                 using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read))
                 {
-                    return GifFrameCollection.LoadFirst(stream);
+                    return GifFrameCollection.LoadFirst(stream, 512, 320);
                 }
             }
             catch
@@ -963,6 +1145,7 @@ namespace ScriptPlayer.ViewModels
                     bitmapImage.BeginInit();
                     bitmapImage.StreamSource = stream;
                     bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmapImage.DecodePixelWidth = 1024;
                     bitmapImage.EndInit();
                     bitmapImage.Freeze();
 
@@ -1252,6 +1435,107 @@ namespace ScriptPlayer.ViewModels
                 entry.Reset();
                 _uncheckedPlaylistEntries.Enqueue(entry);
             }
+        }
+
+        public void ReloadEntryMetadata(PlaylistEntry entry)
+        {
+            if (entry == null)
+                return;
+
+            entry.Reset();
+            _uncheckedPlaylistEntries.Enqueue(entry);
+            UpdateAvailableTags();
+            UpdateFilter();
+        }
+
+        public NfoMetadata SaveEntryFavorite(PlaylistEntry entry, bool favorite, NfoFileOperations files = null)
+        {
+            if (entry == null) throw new ArgumentNullException(nameof(entry));
+            var draft = entry.CreateMetadataDraft();
+            draft.Favorite = favorite;
+            string target = string.IsNullOrWhiteSpace(entry.NfoPath) ? entry.Fullname : entry.NfoPath;
+            draft.Save(target, files ?? new NfoFileOperations());
+            return draft;
+        }
+
+        /// <summary>Publishes committed data directly; no Reset, rescanning or failure-prone disk reload.</summary>
+        public string PublishCommittedMetadata(NfoMetadata metadata)
+        {
+            if (metadata == null || string.IsNullOrWhiteSpace(metadata.SidecarPath))
+                throw new ArgumentException("缺少已提交的 NFO。", nameof(metadata));
+            var warnings = new List<string>();
+            string target = Path.GetFullPath(metadata.SidecarPath);
+            foreach (var entry in Entries.Where(value => value != null && !value.Removed).ToArray())
+            {
+                if (string.IsNullOrWhiteSpace(entry.NfoPath)) continue;
+                try
+                {
+                    if (string.Equals(Path.GetFullPath(entry.NfoPath), target, StringComparison.OrdinalIgnoreCase))
+                        entry.ApplyCommittedMetadata(metadata);
+                }
+                catch (Exception ex) { warnings.Add(entry.Fullname + ": " + ex.Message); }
+            }
+            try { RefreshFilter(); }
+            catch (Exception ex) { warnings.Add(ex.Message); }
+            return warnings.Count == 0 ? null : string.Join(Environment.NewLine, warnings);
+        }
+
+        public void RefreshLocalMetadata()
+        {
+            foreach (PlaylistEntry entry in Entries.Where(value => value != null && !value.Removed))
+            {
+                string mediaFile = OnRequestMediaFileName(entry.Fullname);
+                string[] scriptVariants = OnRequestScriptFileNames(entry.Fullname) ?? new string[0];
+                string scriptFile = scriptVariants.FirstOrDefault() ?? OnRequestScriptFileName(entry.Fullname);
+                entry.LoadLocalMetadata(mediaFile, scriptFile, scriptVariants);
+            }
+
+            UpdateAvailableTags();
+            UpdateFilter();
+        }
+
+        public void RefreshFilter()
+        {
+            UpdateAvailableTags();
+            UpdateFilter();
+        }
+
+        private void ScheduleFilterRefresh()
+        {
+            if (Interlocked.Exchange(ref _filterRefreshPending, 1) == 1)
+                return;
+
+            _dispatcher.BeginInvoke(new Action(() =>
+            {
+                Interlocked.Exchange(ref _filterRefreshPending, 0);
+                if (_disposed)
+                    return;
+
+                _metadataRefreshTimer.Stop();
+                _metadataRefreshTimer.Start();
+            }), DispatcherPriority.Background);
+        }
+
+        private void ScheduleTextFilterRefresh()
+        {
+            if (_filterDebounceTimer == null)
+                return;
+
+            _filterDebounceTimer.Stop();
+            _filterDebounceTimer.Start();
+        }
+
+        private void FilterDebounceTimerOnTick(object sender, EventArgs eventArgs)
+        {
+            _filterDebounceTimer.Stop();
+            UpdateFilter();
+        }
+
+        private void MetadataRefreshTimerOnTick(object sender, EventArgs eventArgs)
+        {
+            _metadataRefreshTimer.Stop();
+            UpdateAvailableTags();
+            UpdateFilter();
         }
 
         private void EnsureMediaInfo(PlaylistEntry entry)
@@ -1545,6 +1829,14 @@ namespace ScriptPlayer.ViewModels
             return !eventArgs.Handled ? null : eventArgs.Value;
         }
 
+        protected virtual string[] OnRequestScriptFileNames(string fileName)
+        {
+            RequestEventArgs<string, string[]> eventArgs = new RequestEventArgs<string, string[]>(fileName);
+            RequestScriptFileNames?.Invoke(this, eventArgs);
+
+            return !eventArgs.Handled ? null : eventArgs.ValueOut;
+        }
+
         protected virtual string OnRequestVideoFileName(string fileName)
         {
             RequestEventArgs<string> eventArgs = new RequestEventArgs<string>(fileName);
@@ -1573,6 +1865,11 @@ namespace ScriptPlayer.ViewModels
 
             _disposed = true;
             _uncheckedPlaylistEntries.Close();
+
+            _filterDebounceTimer.Stop();
+            _filterDebounceTimer.Tick -= FilterDebounceTimerOnTick;
+            _metadataRefreshTimer.Stop();
+            _metadataRefreshTimer.Tick -= MetadataRefreshTimerOnTick;
 
             try
             {

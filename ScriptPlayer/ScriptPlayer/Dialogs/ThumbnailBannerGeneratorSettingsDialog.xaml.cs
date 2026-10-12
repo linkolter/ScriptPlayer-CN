@@ -29,20 +29,20 @@ namespace ScriptPlayer.Dialogs
             PreviewThumbnailBanner(Settings);
         }
 
-        private void PreviewThumbnailBanner(ThumbnailBannerGeneratorSettings settings)
+        private async void PreviewThumbnailBanner(ThumbnailBannerGeneratorSettings settings)
         {
-            new ThumbnailBannerGeneratorSettingsPreviewDialog(settings).ShowDialog();
+            await InlineDialogService.ShowAsync(new ThumbnailBannerGeneratorSettingsPreviewDialog(settings));
         }
 
         private void btnCancel_Click(object sender, RoutedEventArgs e)
         {
-            DialogResult = false;
+            InlineDialogService.Complete(this, false);
         }
 
         private void btnOk_Click(object sender, RoutedEventArgs e)
         {
             ((Button) sender).Focus();
-            DialogResult = true;
+            InlineDialogService.Complete(this, true);
         }
     }
 }

@@ -20,8 +20,8 @@ namespace ScriptPlayer.Shared
             Disconnected?.Invoke(this, e);
         }
 
-        private bool _running;
-        private bool _isEnabled;
+        private volatile bool _running;
+        private volatile bool _isEnabled;
 
         private readonly Thread _commandThread;
         private readonly BlockingQueue<QueueEntry<DeviceCommandInformation>> _queue = new BlockingQueue<QueueEntry<DeviceCommandInformation>>();
@@ -106,7 +106,21 @@ namespace ScriptPlayer.Shared
 
         protected abstract Task Set(DeviceCommandInformation information);
 
+        // The playback pipeline already serializes / coalesces commands per device.
+        // Avoid adding a second queue that can replay old media commands after a seek.
+        public Task SendRealtimeAsync(DeviceCommandInformation information)
+        {
+            if (!_running || !_isEnabled) return Task.CompletedTask;
+            return Set(information);
+        }
+
         public abstract Task Set(IntermediateCommandInformation information);
+
+        public virtual Task StopRealtimeAsync()
+        {
+            Stop();
+            return Task.CompletedTask;
+        }
 
         protected abstract void StopInternal();
 
@@ -116,7 +130,7 @@ namespace ScriptPlayer.Shared
             StopInternal();
         }
 
-        private void EmptyQueue()
+        protected void EmptyQueue()
         {
             _queue.Clear();
         }

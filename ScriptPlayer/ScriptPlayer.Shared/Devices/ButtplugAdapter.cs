@@ -333,6 +333,11 @@ namespace ScriptPlayer.Shared
 
         public async void Stop(ButtplugClientDevice device)
         {
+            await StopAsync(device);
+        }
+
+        public async Task StopAsync(ButtplugClientDevice device)
+        {
             if (_client == null)
                 return;
 
@@ -342,7 +347,12 @@ namespace ScriptPlayer.Shared
 
             try
             {
+                await _clientLock.WaitAsync().ConfigureAwait(false);
+                try
+                {
                 await device.StopAsync();
+                }
+                finally { _clientLock.Release(); }
             }
             catch (Exception e)
             {

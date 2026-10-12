@@ -18,12 +18,50 @@ namespace ScriptPlayer.ViewModels
 {
     public class SettingsViewModel : INotifyPropertyChanged
     {
+        private string _interfaceLanguage = "zh-CN";
+        private string _interfaceTheme = "Dark";
+        private string _interfaceAccent = "Orange";
+        private bool _enableInterfaceAnimations = true;
+        public static bool IsInterfacePreference(string name) => name == nameof(InterfaceLanguage)
+            || name == nameof(InterfaceTheme) || name == nameof(InterfaceAccent) || name == nameof(EnableInterfaceAnimations);
+
+        // Presentation-only preferences; never change media, script or device values.
+        public string InterfaceLanguage
+        {
+            get => _interfaceLanguage;
+            set { var normalized = value == "en" ? "en" : "zh-CN"; if (_interfaceLanguage == normalized) return; _interfaceLanguage = normalized; OnPropertyChanged(); }
+        }
+        public string InterfaceTheme
+        {
+            get => _interfaceTheme;
+            set { var normalized = value == "Light" ? "Light" : "Dark"; if (_interfaceTheme == normalized) return; _interfaceTheme = normalized; OnPropertyChanged(); }
+        }
+        public string InterfaceAccent
+        {
+            get => _interfaceAccent;
+            set { var normalized = value == "Blue" || value == "Teal" || value == "Purple" || value == "Rose" ? value : "Orange"; if (_interfaceAccent == normalized) return; _interfaceAccent = normalized; OnPropertyChanged(); }
+        }
+        public bool EnableInterfaceAnimations
+        {
+            get => _enableInterfaceAnimations;
+            set { if (_enableInterfaceAnimations == value) return; _enableInterfaceAnimations = value; OnPropertyChanged(); }
+        }
         private string _handyDeviceId;
+        private bool _legacyHandyCredential, _handyCredentialLoadFailed, _handyCredentialEdited, _ordinarySettingsLoadFailed;
+        private string _privateSettingsStatus;
+
+        [XmlIgnore]
+        public string PrivateSettingsStatus
+        {
+            get => _privateSettingsStatus;
+            private set { _privateSettingsStatus = value; OnPropertyChanged(); }
+        }
 
         private string _vlcEndpoint;
         private string _vlcPassword;
         private string _whirligigEndpoint;
         private string _buttplugUrl;
+        private string _tCodePortName;
 
         private ObservableCollection<string> _additionalPaths = new ObservableCollection<string>();
         private ObservableCollection<FavouriteFolder> _favouriteFolders = new ObservableCollection<FavouriteFolder>();
@@ -116,6 +154,7 @@ namespace ScriptPlayer.ViewModels
             }
         }
 
+        [XmlIgnore]
         public string HandyDeviceId
         {
             get => _handyDeviceId;
@@ -123,6 +162,27 @@ namespace ScriptPlayer.ViewModels
             {
                 if (value == _handyDeviceId) return;
                 _handyDeviceId = value;
+                _handyCredentialEdited = true;
+                OnPropertyChanged();
+            }
+        }
+
+        // Read old plaintext settings without ever writing the connection key back to XML.
+        [XmlElement("HandyDeviceId")]
+        public string LegacyHandyDeviceId
+        {
+            get => null;
+            set { _legacyHandyCredential = true; HandyDeviceId = value; }
+        }
+        public bool ShouldSerializeLegacyHandyDeviceId() => false;
+
+        public string TCodePortName
+        {
+            get => _tCodePortName;
+            set
+            {
+                if (value == _tCodePortName) return;
+                _tCodePortName = value;
                 OnPropertyChanged();
             }
         }
@@ -255,6 +315,7 @@ namespace ScriptPlayer.ViewModels
             WhirligigEndpoint = null;
             VlcEndpoint = null;
             ButtplugUrl = null;
+            TCodePortName = null;
             MpcHcEndpoint = null;
             SamsungVrUdpPort = 0;
             GoProVrPlayerUdpPort = 0;
@@ -293,6 +354,7 @@ namespace ScriptPlayer.ViewModels
 
             foreach (PropertyInfo property in GetType().GetProperties())
             {
+                if (property.Name == nameof(LegacyHandyDeviceId) || property.Name == nameof(FfmpegPath)) continue;
                 try
                 {
                     property.SetValue(duplicate, property.GetValue(this));
@@ -305,6 +367,10 @@ namespace ScriptPlayer.ViewModels
 
             duplicate.AdditionalPaths = new ObservableCollection<string>(AdditionalPaths ?? new ObservableCollection<string>());
             duplicate.FavouriteFolders = new ObservableCollection<FavouriteFolder>(FavouriteFolders?.Select(f => f.Duplicate()) ?? new ObservableCollection<FavouriteFolder>());
+            duplicate._legacyHandyCredential = _legacyHandyCredential;
+            duplicate._handyCredentialLoadFailed = _handyCredentialLoadFailed;
+            duplicate._handyCredentialEdited = _handyCredentialEdited;
+            duplicate._ordinarySettingsLoadFailed = _ordinarySettingsLoadFailed;
 
             return duplicate;
         }
@@ -1279,16 +1345,34 @@ namespace ScriptPlayer.ViewModels
             }
         }
 
+        [XmlIgnore]
         public string FfmpegPath
         {
-            get => _ffmpegPath;
+            get
+            {
+                string bundledPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg.exe");
+                return File.Exists(bundledPath) ? bundledPath : _ffmpegPath;
+            }
             set
             {
                 if (value == _ffmpegPath) return;
                 _ffmpegPath = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(FfmpegDisplayPath));
             }
         }
+
+        [XmlElement("FfmpegPath")]
+        public string FfmpegOverridePath
+        {
+            get => string.Equals(_ffmpegPath, Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg.exe"), StringComparison.OrdinalIgnoreCase) ? null : _ffmpegPath;
+            set => _ffmpegPath = value;
+        }
+
+        [XmlIgnore]
+        public string FfmpegDisplayPath => File.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg.exe"))
+            ? Localization.ChineseLocalization.Translate("随程序提供（ffmpeg.exe）")
+            : string.IsNullOrWhiteSpace(_ffmpegPath) ? Localization.ChineseLocalization.Translate("未配置 FFmpeg") : _ffmpegPath;
 
         public TimeDisplayMode TimeDisplayMode
         {
@@ -1669,14 +1753,39 @@ namespace ScriptPlayer.ViewModels
         {
             try
             {
+                SettingsViewModel settings;
                 if (!File.Exists(filename))
-                    return null;
-
-                using (FileStream stream = new FileStream(filename, FileMode.Open, FileAccess.Read))
                 {
-                    XmlSerializer serializer = new XmlSerializer(typeof(SettingsViewModel));
-                    return serializer.Deserialize(stream) as SettingsViewModel;
+                    if (!File.Exists(Settings.HandyCredentialStore.FilePath(filename))) return null;
+                    settings = new SettingsViewModel();
                 }
+                else
+                {
+                    try
+                    {
+                        using (FileStream stream = new FileStream(filename, FileMode.Open, FileAccess.Read))
+                            settings = new XmlSerializer(typeof(SettingsViewModel)).Deserialize(stream) as SettingsViewModel;
+                    }
+                    catch
+                    {
+                        // A defaults fallback must not overwrite an intact private credential.
+                        settings = new SettingsViewModel { _ordinarySettingsLoadFailed = true };
+                    }
+                }
+                if (settings == null) return null;
+                if (!settings._legacyHandyCredential || string.IsNullOrEmpty(settings.HandyDeviceId) || settings.HandyDeviceId == HandyHelper.DefaultDeviceId)
+                {
+                    try { settings.HandyDeviceId = Settings.HandyCredentialStore.Load(filename) ?? HandyHelper.DefaultDeviceId; }
+                    catch
+                    {
+                        settings._handyCredentialLoadFailed = true;
+                        settings.PrivateSettingsStatus = Localization.ChineseLocalization.Translate("无法读取本机加密密钥；原文件已保留，请重新输入连接密钥后保存。");
+                    }
+                }
+                settings._handyCredentialEdited = false;
+                if (settings._ordinarySettingsLoadFailed)
+                    settings.PrivateSettingsStatus = Localization.ChineseLocalization.Translate("普通设置无法读取；原文件和私人密钥已保留，修复配置前不会自动覆盖。");
+                return settings;
             }
             catch (Exception e)
             {
@@ -1696,15 +1805,20 @@ namespace ScriptPlayer.ViewModels
                 if (!Directory.Exists(dir))
                     Directory.CreateDirectory(dir);
 
-                using (FileStream stream = new FileStream(filename, FileMode.Create, FileAccess.Write))
-                {
-                    XmlSerializer serializer = new XmlSerializer(typeof(SettingsViewModel));
-                    serializer.Serialize(stream, this);
-                }
+                if (_ordinarySettingsLoadFailed || (_handyCredentialLoadFailed && !_handyCredentialEdited))
+                    throw new InvalidOperationException("Private credential is unavailable");
+                // Persist the credential first. Failed migration must leave the old XML intact.
+                Settings.HandyCredentialStore.Save(filename, HandyDeviceId);
+                Settings.HandyCredentialStore.WriteAtomically(filename,
+                    stream => new XmlSerializer(typeof(SettingsViewModel)).Serialize(stream, this));
+                _legacyHandyCredential = _handyCredentialLoadFailed = _handyCredentialEdited = false;
+                PrivateSettingsStatus = null;
             }
-            catch (Exception e)
+            catch
             {
-                Debug.WriteLine(e);
+                // Exception text can include a user's path; do not disclose credential details.
+                PrivateSettingsStatus = Localization.ChineseLocalization.Translate("无法保存私人设置；原配置已保留，请检查本机权限后重试。");
+                Debug.WriteLine("Local settings save failed; original settings preserved.");
             }
         }
     }

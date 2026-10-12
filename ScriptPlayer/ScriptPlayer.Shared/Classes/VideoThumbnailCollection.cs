@@ -100,12 +100,14 @@ namespace ScriptPlayer.Shared.Classes
             foreach (JObject thumb in jThumbs)
             {
                 byte[] image = Convert.FromBase64String(thumb["image"].Value<string>());
-                JpegBitmapDecoder decoder = new JpegBitmapDecoder(new MemoryStream(image), BitmapCreateOptions.None, BitmapCacheOption.None);
+                JpegBitmapDecoder decoder = new JpegBitmapDecoder(new MemoryStream(image), BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
                 TimeSpan timestamp = TimeSpan.Parse(thumb["time"].Value<string>());
 
+                var frame = decoder.Frames[0];
+                frame.Freeze();
                 VideoThumbnail thumbnail = new VideoThumbnail
                 {
-                    Thumbnail = decoder.Frames[0],
+                    Thumbnail = frame,
                     Timestamp = timestamp
                 };
 

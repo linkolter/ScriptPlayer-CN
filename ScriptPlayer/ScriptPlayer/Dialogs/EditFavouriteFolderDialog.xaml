@@ -10,16 +10,18 @@
         ResizeMode="NoResize"
         DataContext="{Binding RelativeSource={RelativeSource Self}}"
         Title="Favourite Folder" Height="134.818" Width="409.844">
-    <Grid>
-        <Button IsDefault="True" Click="btnOk_Click" Content="Ok" HorizontalAlignment="Right" Margin="0,0,90,10" VerticalAlignment="Bottom" Width="75"/>
-        <Button IsCancel="True" Click="btnCancel_Click" Content="Cancel" HorizontalAlignment="Right" Margin="0,0,10,10" VerticalAlignment="Bottom" Width="75"/>
-        <TextBlock HorizontalAlignment="Left" Margin="10,13,0,0" TextWrapping="Wrap" Text="Path" VerticalAlignment="Top"/>
-        <TextBox Text="{Binding Path}" Height="23" Margin="62,12,40,0" TextWrapping="Wrap" VerticalAlignment="Top"/>
-        <Button Click="btnSelectPath_Click" Content="..." Margin="0,12,10,0" VerticalAlignment="Top" Height="23" HorizontalAlignment="Right" Width="25"/>
-        <TextBlock HorizontalAlignment="Left" Margin="10,41,0,0" TextWrapping="Wrap" Text="Name" VerticalAlignment="Top"/>
-        <TextBox Text="{Binding FolderName}" Height="23" Margin="62,40,10,0" TextWrapping="Wrap" VerticalAlignment="Top"/>
-        <TextBlock HorizontalAlignment="Left" Margin="10,69,0,0" TextWrapping="Wrap" Text="Default" VerticalAlignment="Top"/>
-        <CheckBox Name="cckDefault" IsChecked="{Binding IsDefault}" HorizontalAlignment="Left" Margin="62,70,0,0" VerticalAlignment="Top"/>
-
+    <Grid Margin="0">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+        <TextBlock Text="Path" VerticalAlignment="Center" Margin="0,0,12,12"/>
+        <TextBox Grid.Column="1" Text="{Binding Path}" TextWrapping="Wrap" Margin="0,0,8,12"/>
+        <Button Grid.Column="2" Click="btnSelectPath_Click" Content="..." Margin="0,0,0,12" MinWidth="36"/>
+        <TextBlock Grid.Row="1" Text="Name" VerticalAlignment="Center" Margin="0,0,12,12"/>
+        <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding FolderName}" TextWrapping="Wrap" Margin="0,0,0,12"/>
+        <CheckBox Grid.Row="2" Grid.ColumnSpan="3" Name="cckDefault" Content="Default" IsChecked="{Binding IsDefault}" Margin="0,0,0,16"/>
+        <StackPanel Grid.Row="3" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button IsDefault="True" Click="btnOk_Click" Content="Ok" MinWidth="75" Margin="0,0,8,0"/>
+            <Button IsCancel="True" Click="btnCancel_Click" Content="Cancel" MinWidth="75"/>
+        </StackPanel>
     </Grid>
 </Window>

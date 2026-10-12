@@ -9,7 +9,7 @@ namespace ScriptPlayer.Dialogs
     public partial class HandyDeviceIdSettingsDialog : Window
     {
         public static readonly DependencyProperty DeviceIdProperty = DependencyProperty.Register(
-            "DeviceId", typeof(string), typeof(KodiConnectionSettingsDialog), new PropertyMetadata(default(string)));
+            "DeviceId", typeof(string), typeof(HandyDeviceIdSettingsDialog), new PropertyMetadata(default(string)));
 
         public string DeviceId
         {
@@ -18,7 +18,7 @@ namespace ScriptPlayer.Dialogs
         }
 
         public static readonly DependencyProperty LocalIpProperty = DependencyProperty.Register(
-            "LocalIP", typeof(string), typeof(KodiConnectionSettingsDialog), new PropertyMetadata(default(string)));
+            "LocalIP", typeof(string), typeof(HandyDeviceIdSettingsDialog), new PropertyMetadata(default(string)));
 
         public string LocalIp
         {
@@ -27,7 +27,7 @@ namespace ScriptPlayer.Dialogs
         }
 
         public static readonly DependencyProperty PortProperty = DependencyProperty.Register(
-            "HttpPort", typeof(string), typeof(KodiConnectionSettingsDialog), new PropertyMetadata(default(string)));
+            "HttpPort", typeof(string), typeof(HandyDeviceIdSettingsDialog), new PropertyMetadata(default(string)));
 
         public string Port
         {
@@ -42,7 +42,7 @@ namespace ScriptPlayer.Dialogs
             LocalIp = localIp;
             Port = port;
 
-            deviceId.Text = currentId;
+            deviceId.Password = currentId ?? string.Empty;
 
             localIpOverride.Text = localIp;
             localIpOverride.IsEnabled = enableLanOverride;
@@ -54,7 +54,7 @@ namespace ScriptPlayer.Dialogs
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             ((Button)sender).Focus();
-            DeviceId = deviceId.Text;
+            DeviceId = deviceId.Password;
             LocalIp = localIpOverride.Text;
             Port = portOverride.Text;
             DialogResult = true;

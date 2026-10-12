@@ -43,7 +43,7 @@ namespace ScriptPlayer.Dialogs
                 return;
             }
 
-            DialogResult = true;
+            InlineDialogService.Complete(this, true);
         }
     }
 }

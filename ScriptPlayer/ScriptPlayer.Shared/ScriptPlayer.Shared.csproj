@@ -35,6 +35,9 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="MK312WifiLibDotNet" Condition="'$(UsePrebuiltProjectReferences)' == 'true'">
+      <HintPath>..\MK312WifiDotNetLib\bin\Release\net48\MK312WifiLibDotNet.dll</HintPath>
+    </Reference>
     <Reference Include="Buttplug, Version=5.0.1.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Buttplug.5.0.1\lib\net47\Buttplug.dll</HintPath>
     </Reference>
@@ -137,6 +140,10 @@
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
+    <Reference Include="netstandard">
+      <HintPath>$(TargetFrameworkRootPath).NETFramework\v4.8\Facades\netstandard.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
@@ -180,6 +187,9 @@
     <Compile Include="Controls\BeatAndPositionBar.cs" />
     <Compile Include="Controls\BetterTooltip.cs" />
     <Compile Include="Controls\MediaWrapper.cs" />
+    <Compile Include="Controls\MpvNative.cs" />
+    <Compile Include="Controls\MpvController.cs" />
+    <Compile Include="Controls\MpvVideoPlayer.cs" />
     <Compile Include="Controls\PageSelector.cs" />
     <Compile Include="Controls\SubtitleDisplay.cs" />
     <Compile Include="Controls\TactBar.cs" />
@@ -194,6 +204,8 @@
     <Compile Include="Devices\Estim\EStimAudioController.cs" />
     <Compile Include="Devices\Estim\EStimAudioDevice.cs" />
     <Compile Include="Devices\ButtplugAdapter.cs" />
+    <Compile Include="Devices\TCodeSerialController.cs" />
+    <Compile Include="Devices\TCodeTransport.cs" />
     <Compile Include="Colors\HslConversion.cs" />
     <Compile Include="Beats\BeatGroup.cs" />
     <Compile Include="Beats\BeatPattern.cs" />
@@ -338,6 +350,8 @@
     <Compile Include="TimeSource\KodiTimeSource.cs" />
     <Compile Include="TimeSource\ManualTimeSource.cs" />
     <Compile Include="TimeSource\MediaPlayerTimeSource.cs" />
+    <Compile Include="TimeSource\MpvTimeSource.cs" />
+    <Compile Include="TimeSource\MpvPlaybackSample.cs" />
     <Compile Include="TimeSource\ISampleClock.cs" />
     <Compile Include="TimeSource\MpcCommandCodes.cs" />
     <Compile Include="TimeSource\SimpleTcpConnectionSettings.cs" />
@@ -420,7 +434,7 @@
     <Resource Include="Images\Devices\Launch.png" />
     <Resource Include="Images\Devices\Nora.png" />
   </ItemGroup>
-  <ItemGroup>
+  <ItemGroup Condition="'$(UsePrebuiltProjectReferences)' != 'true'">
     <ProjectReference Include="..\MK312WifiDotNetLib\MK312WifiLibDotNet.csproj">
       <Project>{6541d0e3-9075-4f35-af79-943f8b695bbb}</Project>
       <Name>MK312WifiLibDotNet</Name>

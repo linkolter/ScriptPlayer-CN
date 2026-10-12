@@ -48,6 +48,12 @@ namespace ScriptPlayer.Shared.Scripts
         [JsonProperty(PropertyName = "metadata")]
         public FunScriptMetaData MetaData { get; set; }
 
+        [JsonProperty(PropertyName = "axes")]
+        public List<FunScriptAxis> Axes { get; set; }
+
+        [JsonProperty(PropertyName = "channels")]
+        public Dictionary<string, FunScriptChannel> Channels { get; set; }
+
         public FunScriptFile()
         {
             Inverted = false;
@@ -62,6 +68,24 @@ namespace ScriptPlayer.Shared.Scripts
 
             File.WriteAllText(filename, content, new UTF8Encoding(false));
         }
+    }
+
+    public class FunScriptAxis
+    {
+        [JsonProperty(PropertyName = "id")]
+        public string Id { get; set; }
+
+        [JsonProperty(PropertyName = "name")]
+        public string Name { get; set; }
+
+        [JsonProperty(PropertyName = "actions")]
+        public List<FunScriptAction> Actions { get; set; }
+    }
+
+    public class FunScriptChannel
+    {
+        [JsonProperty(PropertyName = "actions")]
+        public List<FunScriptAction> Actions { get; set; }
     }
 
     public class FunScriptMetaData

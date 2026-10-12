@@ -1,0 +1,62 @@
+<Window x:Class="ScriptPlayer.Dialogs.NfoEditorDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="本地 NFO / EroScripts 标签" Height="500" Width="640"
+        MinHeight="430" MinWidth="560" WindowStartupLocation="CenterOwner">
+    <Grid Margin="14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <!-- Keep actions reachable when the form or recovery details exceed the viewport. -->
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,8">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="NFO 文件" VerticalAlignment="Center" Margin="0,0,8,8"/>
+        <TextBox x:Name="txtNfoPath" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" IsReadOnly="True" Margin="0,0,0,8"/>
+
+        <TextBlock Grid.Row="1" Grid.Column="0" Text="标题" VerticalAlignment="Center" Margin="0,0,8,8"/>
+        <TextBox x:Name="txtTitle" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,0,0,8"/>
+
+        <TextBlock Grid.Row="2" Grid.Column="0" Text="EroScripts 网址" VerticalAlignment="Center" Margin="0,0,8,8"/>
+        <TextBox x:Name="txtSource" Grid.Row="2" Grid.Column="1" Margin="0,0,8,8"/>
+        <Button x:Name="btnFetch" Grid.Row="2" Grid.Column="2" Content="读取标题和标签" Padding="12,3" Margin="0,0,0,8" Click="BtnFetch_OnClick"/>
+
+        <TextBlock Grid.Row="3" Grid.Column="0" Text="类型" VerticalAlignment="Center" Margin="0,0,8,8"/>
+        <TextBox x:Name="txtType" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,0,0,8"/>
+
+        <TextBlock Grid.Row="4" Grid.Column="0" Text="标签" VerticalAlignment="Top" Margin="0,4,8,8"/>
+        <TextBox x:Name="txtTags" Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" Height="75"
+                 AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Margin="0,0,0,8"
+                 ToolTip="用逗号、分号或换行分隔，例如：the-handy, keon, animation, non-vr"/>
+
+        <TextBlock Grid.Row="5" Grid.Column="0" Text="说明" VerticalAlignment="Top" Margin="0,4,8,8"/>
+        <TextBox x:Name="txtPlot" Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2" Height="100" AcceptsReturn="True"
+                 TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Margin="0,0,0,8"/>
+
+            </Grid>
+        </ScrollViewer>
+
+        <ScrollViewer Grid.Row="1" MaxHeight="64" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,8">
+            <TextBlock x:Name="txtStatus" Foreground="{DynamicResource MediaAccentBrush}" TextWrapping="Wrap"/>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="保存" IsDefault="True" Width="88" Margin="0,0,8,0" Click="BtnSave_OnClick"/>
+            <Button Content="取消" IsCancel="True" Width="88"/>
+        </StackPanel>
+    </Grid>
+</Window>

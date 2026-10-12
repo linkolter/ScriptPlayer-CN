@@ -5,12 +5,12 @@ using System.Windows;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("ScriptPlayer")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("ScriptPlayer 汉化版")]
+[assembly: AssemblyDescription("汉化版")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("ScriptPlayer")]
-[assembly: AssemblyCopyright("Copyright © Fred Tungsten 2022")]
+[assembly: AssemblyCompany("汉化版")]
+[assembly: AssemblyProduct("ScriptPlayer 汉化版")]
+[assembly: AssemblyCopyright("原项目 © Fred Tungsten")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -49,9 +49,9 @@ using System.Windows;
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyVersion("1.0.12.3")]
+[assembly: AssemblyFileVersion("1.0.12.3")]
 // Use informational version to store git hashes
-[assembly: AssemblyInformationalVersion("1.0.0.0")]
+[assembly: AssemblyInformationalVersion("v1.0.12.3")]
 [assembly: Guid("6F331F84-6C70-4E9F-AAFF-8527663E68A5")]
 

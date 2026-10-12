@@ -159,7 +159,7 @@ namespace ScriptPlayer.Dialogs
 
         private void BtnCancel_Click(object sender, RoutedEventArgs e)
         {
-            DialogResult = false;
+            InlineDialogService.Complete(this, false);
         }
 
         private void BtnOk_Click(object sender, RoutedEventArgs e)
@@ -191,7 +191,7 @@ namespace ScriptPlayer.Dialogs
                 ClipLeft = ClipLeft
             };
 
-            DialogResult = true;
+            InlineDialogService.Complete(this, true);
         }
     }
 }

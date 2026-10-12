@@ -1,0 +1,44 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:primitives="clr-namespace:System.Windows.Controls.Primitives;assembly=PresentationFramework" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+  <primitives:PopupAnimation x:Key="MediaPopupAnimation">Fade</primitives:PopupAnimation>
+  <SolidColorBrush x:Key="MediaPlaybackMutedBrush" Color="#B5B5B5"/>
+  <SolidColorBrush x:Key="MediaPlaybackTextBrush" Color="#F3F3F3"/>
+  <FontFamily x:Key="MediaFontFamily">Segoe UI, Microsoft YaHei UI</FontFamily>
+  <sys:Double x:Key="MediaBodyFontSize">14</sys:Double>
+  <sys:Double x:Key="MediaCaptionFontSize">12</sys:Double>
+  <sys:Double x:Key="MediaSectionFontSize">20</sys:Double>
+  <sys:Double x:Key="MediaHeadingFontSize">28</sys:Double>
+  <SolidColorBrush x:Key="MediaBackgroundBrush" Color="#202020"/>
+  <SolidColorBrush x:Key="MediaNavigationBrush" Color="#191919"/>
+  <SolidColorBrush x:Key="MediaSurfaceBrush" Color="#2D2D2D"/>
+  <SolidColorBrush x:Key="MediaRaisedBrush" Color="#323232"/>
+  <SolidColorBrush x:Key="MediaBorderBrush" Color="#3C3C3C"/>
+  <SolidColorBrush x:Key="MediaTextBrush" Color="#F3F3F3"/>
+  <SolidColorBrush x:Key="MediaMutedBrush" Color="#B5B5B5"/>
+  <SolidColorBrush x:Key="MediaAccentBrush" Color="#FF963F"/>
+  <SolidColorBrush x:Key="MediaHoverBrush" Color="#3B3B3B"/>
+  <SolidColorBrush x:Key="MediaPressedBrush" Color="#464646"/>
+  <SolidColorBrush x:Key="MediaSelectionBrush" Color="#403025"/>
+  <SolidColorBrush x:Key="MediaOverlayBrush" Color="#EE282828"/>
+  <SolidColorBrush x:Key="MediaContentOverlayBrush" Color="#E6282828"/>
+  <SolidColorBrush x:Key="MediaBadgeBrush" Color="#DD202020"/>
+  <SolidColorBrush x:Key="MediaScrimBrush" Color="#AF000000"/>
+  <SolidColorBrush x:Key="MediaDisabledBrush" Color="#929292"/>
+  <SolidColorBrush x:Key="MediaTrackBrush" Color="#777777"/>
+  <SolidColorBrush x:Key="MediaFavoriteBrush" Color="#FF963F"/>
+  <SolidColorBrush x:Key="MediaErrorBrush" Color="#F04438"/>
+  <SolidColorBrush x:Key="MediaAccentHoverBrush" Color="#FFB16D"/>
+  <SolidColorBrush x:Key="MediaAccentPressedBrush" Color="#E9822D"/>
+  <SolidColorBrush x:Key="MediaAccentTextBrush" Color="#181818"/>
+  <SolidColorBrush x:Key="MediaSwitchOffBrush" Color="#353535"/>
+  <SolidColorBrush x:Key="MediaSwitchBorderBrush" Color="#A6A6A6"/>
+  <SolidColorBrush x:Key="MediaSwitchKnobBrush" Color="#E6E6E6"/>
+  <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey}" Color="#282828"/>
+  <SolidColorBrush x:Key="{x:Static SystemColors.WindowTextBrushKey}" Color="#F3F3F3"/>
+  <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="#323232"/>
+  <SolidColorBrush x:Key="{x:Static SystemColors.ControlTextBrushKey}" Color="#F3F3F3"/>
+  <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#403025"/>
+  <CornerRadius x:Key="MediaControlRadius">6</CornerRadius>
+  <CornerRadius x:Key="MediaCardRadius">8</CornerRadius>
+  <Thickness x:Key="MediaControlPadding">12,7</Thickness>
+  <Thickness x:Key="MediaCardPadding">16</Thickness>
+</ResourceDictionary>

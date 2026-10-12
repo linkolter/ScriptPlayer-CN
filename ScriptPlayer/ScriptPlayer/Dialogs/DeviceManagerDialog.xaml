@@ -11,8 +11,9 @@
     <Window.Resources>
         <converters:DeviceToImageConverter x:Key="DeviceConverter"/>
     </Window.Resources>
-    <Grid>
-        <Grid Margin="10,10,10,31" HorizontalAlignment="Stretch">
+    <Grid Margin="8">
+        <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <Grid Margin="0,0,0,12" HorizontalAlignment="Stretch">
             <Grid.Style>
                 <Style TargetType="Grid">
                     <Setter Property="Visibility" Value="Collapsed"/>
@@ -23,9 +24,10 @@
                     </Style.Triggers>
                 </Style>
             </Grid.Style>
-            <TextBlock Text="No Devices Connected" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10"/>
+            <TextBlock Text="No Devices Connected" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="16"
+                       Foreground="{DynamicResource MediaMutedBrush}" TextWrapping="Wrap"/>
         </Grid>
-        <Grid Margin="10,10,10,31">
+        <Grid Margin="0,0,0,12">
             <ItemsControl ItemsSource="{Binding Devices}" HorizontalContentAlignment="Stretch">
                 <ItemsControl.Style>
                     <Style TargetType="ItemsControl">
@@ -43,38 +45,22 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type interfaces:IDevice}">
-                        <Border HorizontalAlignment="Stretch" Background="Azure" BorderBrush="CornflowerBlue" BorderThickness="1" Margin="2">
+                        <Border HorizontalAlignment="Stretch" Background="{DynamicResource MediaRaisedBrush}" BorderBrush="{DynamicResource MediaBorderBrush}"
+                                BorderThickness="1" CornerRadius="{DynamicResource MediaCardRadius}" Padding="12,8" Margin="0,0,0,8">
                             <DockPanel LastChildFill="True" HorizontalAlignment="Stretch">
-                                <CheckBox Width="40" Height="40" IsChecked="{Binding IsEnabled}" DockPanel.Dock="Left">
-                                    <CheckBox.Style>
-                                        <Style TargetType="CheckBox" BasedOn="{StaticResource {x:Static ToolBar.CheckBoxStyleKey}}">
-                                            <Setter Property="Content">
-                                                <Setter.Value>
-                                                    <TextBlock FontSize="25" FontFamily="Webdings" Text="a"/>
-                                                </Setter.Value>
-                                            </Setter>
-                                            <Style.Triggers>
-                                                <Trigger Property="IsChecked" Value="False">
-                                                    <Setter Property="Content">
-                                                        <Setter.Value>
-                                                            <TextBlock FontSize="25" FontFamily="Webdings" Text="r"/>
-                                                        </Setter.Value>
-                                                    </Setter>
-                                                </Trigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </CheckBox.Style>
-                                </CheckBox>
+                                <CheckBox Height="40" IsChecked="{Binding IsEnabled}" DockPanel.Dock="Right"
+                                          Style="{StaticResource ToggleSwitch}" AutomationProperties.Name="{Binding Name}" ToolTip="启用或停用此设备"/>
                                 <Image Width="32" Height="32" Margin="4" Stretch="Uniform" RenderOptions.BitmapScalingMode="NearestNeighbor" VerticalAlignment="Center" DockPanel.Dock="Left" Source="{Binding Converter={StaticResource DeviceConverter}}"/>
-                                <TextBlock Margin="8,0" DockPanel.Dock="Left" Text="{Binding Name}" VerticalAlignment="Center"/>
+                                <TextBlock Margin="8,0,12,0" Text="{Binding Name}" VerticalAlignment="Center" TextWrapping="Wrap"/>
                             </DockPanel>
                         </Border>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
         </Grid>
-        <StackPanel VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,10" Orientation="Horizontal">
-            <TextBlock Foreground="DimGray" TextWrapping="Wrap" Text="Device images by "/>
+        <StackPanel Grid.Row="1" HorizontalAlignment="Center" Orientation="Horizontal">
+            <TextBlock Foreground="{DynamicResource MediaMutedBrush}" FontSize="{DynamicResource MediaCaptionFontSize}"
+                       VerticalAlignment="Center" TextWrapping="Wrap" Text="Device images by "/>
         <Button Content="Funjack" Cursor="Hand" Click="BtnFunjack_Click">
             <Button.Template>
                 <ControlTemplate TargetType="Button">
@@ -84,11 +70,12 @@
                 </ControlTemplate>
             </Button.Template>
             <Button.Style>
-                <Style TargetType="Button">
-                    <Setter Property="Foreground" Value="Black" />
+                <Style TargetType="Button" BasedOn="{StaticResource MediaButton}">
+                    <Setter Property="FontSize" Value="{DynamicResource MediaCaptionFontSize}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource MediaMutedBrush}" />
                     <Style.Triggers>
                         <Trigger Property="IsMouseOver" Value="true">
-                            <Setter Property="Foreground" Value="CornflowerBlue" />
+                            <Setter Property="Foreground" Value="{DynamicResource MediaAccentBrush}" />
                         </Trigger>
                     </Style.Triggers>
                 </Style>

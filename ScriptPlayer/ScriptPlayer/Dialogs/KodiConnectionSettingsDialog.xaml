@@ -5,26 +5,32 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ScriptPlayer.Dialogs"
         mc:Ignorable="d" WindowStartupLocation="CenterOwner" WindowStyle="ToolWindow"
-        Title="Kodi Connection Settings" Height="215.175" Width="364.738">
-    <Grid>
-        <TextBlock HorizontalAlignment="Left" Margin="10,11,0,0" TextWrapping="Wrap" Text="IP" VerticalAlignment="Top"/>
-        <TextBox Name="txtIp" Height="23" Margin="81,10,10,0" VerticalAlignment="Top"/>
+        Title="Kodi Connection Settings" Height="380" Width="480" MinWidth="320">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions><ColumnDefinition Width="112"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
 
-        <TextBlock HorizontalAlignment="Left" Margin="10,39,0,0" TextWrapping="Wrap" Text="HTTP Port" VerticalAlignment="Top"/>
-        <TextBox x:Name="txtHttpPort" Height="23" Margin="81,38,10,0" VerticalAlignment="Top"/>
+        <TextBlock Grid.Row="0" TextWrapping="Wrap" Text="IP" VerticalAlignment="Center" Margin="0,0,16,12"/>
+        <TextBox Name="txtIp" Grid.Row="0" Grid.Column="1" MinHeight="36" Margin="0,0,0,12"/>
 
-        <TextBlock HorizontalAlignment="Left" Margin="10,67,0,0" TextWrapping="Wrap" Text="TCP Port" VerticalAlignment="Top"/>
-        <TextBox x:Name="txtTcpPort" Height="23" Margin="81,66,10,0" VerticalAlignment="Top"/>
-        
-        <TextBlock HorizontalAlignment="Left" Margin="10,95,0,0" TextWrapping="Wrap" Text="User" VerticalAlignment="Top"/>
-        <TextBox x:Name="txtUser" Height="23" Margin="81,94,10,0" VerticalAlignment="Top"/>
-        
-        <TextBlock HorizontalAlignment="Left" Margin="10,123,0,0" TextWrapping="Wrap" Text="Password" VerticalAlignment="Top"/>
-        <PasswordBox x:Name="txtPassword" Height="23" Margin="81,122,10,0" VerticalAlignment="Top"/>
+        <TextBlock Grid.Row="1" TextWrapping="Wrap" Text="HTTP Port" VerticalAlignment="Center" Margin="0,0,16,12"/>
+        <TextBox x:Name="txtHttpPort" Grid.Row="1" Grid.Column="1" MinHeight="36" Margin="0,0,0,12"/>
 
+        <TextBlock Grid.Row="2" TextWrapping="Wrap" Text="TCP Port" VerticalAlignment="Center" Margin="0,0,16,12"/>
+        <TextBox x:Name="txtTcpPort" Grid.Row="2" Grid.Column="1" MinHeight="36" Margin="0,0,0,12"/>
 
-        <Button Content="Ok" IsDefault="True" HorizontalAlignment="Right" Margin="0,0,90,11" VerticalAlignment="Bottom" Width="75" Click="ButtonBase_OnClick"/>
-        <Button Content="Cancel" IsCancel="True" HorizontalAlignment="Right" Margin="0,0,10,11" VerticalAlignment="Bottom" Width="75"/>
+        <TextBlock Grid.Row="3" TextWrapping="Wrap" Text="User" VerticalAlignment="Center" Margin="0,0,16,12"/>
+        <TextBox x:Name="txtUser" Grid.Row="3" Grid.Column="1" MinHeight="36" Margin="0,0,0,12"/>
 
+        <TextBlock Grid.Row="4" TextWrapping="Wrap" Text="Password" VerticalAlignment="Center" Margin="0,0,16,12"/>
+        <PasswordBox x:Name="txtPassword" Grid.Row="4" Grid.Column="1" MinHeight="36" Margin="0,0,0,12"/>
+
+        <StackPanel Grid.Row="5" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+            <Button Content="Ok" IsDefault="True" Width="88" Margin="0,0,8,0" Click="ButtonBase_OnClick"/>
+            <Button Content="Cancel" IsCancel="True" Width="88"/>
+        </StackPanel>
     </Grid>
 </Window>

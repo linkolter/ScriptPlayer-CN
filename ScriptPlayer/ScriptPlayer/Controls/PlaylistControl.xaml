@@ -8,120 +8,201 @@
              xmlns:shared="clr-namespace:ScriptPlayer.Shared;assembly=ScriptPlayer.Shared"
              xmlns:viewModels="clr-namespace:ScriptPlayer.ViewModels"
              xmlns:controls="clr-namespace:ScriptPlayer.Shared.Controls;assembly=ScriptPlayer.Shared"
-             mc:Ignorable="d" Background="White" d:DesignHeight="435.699" d:DesignWidth="354.767" KeyDown="UserControl_KeyDown">
+             mc:Ignorable="d" Background="{DynamicResource MediaBackgroundBrush}" d:DesignHeight="700" d:DesignWidth="1050" KeyDown="UserControl_KeyDown"
+             FontFamily="{DynamicResource MediaFontFamily}" FontSize="{DynamicResource MediaBodyFontSize}">
     <UserControl.Resources>
+        <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="../Themes/MediaTheme.xaml"/>
+        </ResourceDictionary.MergedDictionaries>
         <BooleanToVisibilityConverter x:Key="booleanToVisibilityConverter"/>
         <ContextMenu x:Key="ItemContextMenu" shared:HideOnHover.OverridesHideOnHover="True">
-            <MenuItem Header="Open in Explorer" Command="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.Tag.Playlist.OpenInExplorerCommand}"
+            <MenuItem Header="在文件资源管理器中打开" Command="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.Tag.Playlist.OpenInExplorerCommand}"
+                      CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.DataContext}"/>
+            <MenuItem Header="编辑本地 NFO / EroScripts 标签" Click="MnuEditNfo_OnClick"
+                      CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.DataContext}"/>
+            <MenuItem Header="打开 EroScripts 来源" Click="MnuOpenSource_OnClick"
                       CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.DataContext}"/>
             <Separator/>
-            <MenuItem Header="Remove from playlist" Command="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.Tag.Playlist.RemoveSelectedEntryCommand}"></MenuItem>
-            <MenuItem Header="Rename" Command="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.Tag.Playlist.RenameCommand}"
+            <MenuItem Header="从播放列表移除" Command="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.Tag.Playlist.RemoveSelectedEntryCommand}"></MenuItem>
+            <MenuItem Header="重命名" Command="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.Tag.Playlist.RenameCommand}"
                       CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.DataContext}"></MenuItem>
-            <MenuItem Header="Move" Command="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.Tag.Playlist.MoveCommand}"></MenuItem>
-            <MenuItem Header="Move and remove from playlist" Command="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.Tag.Playlist.MoveAndRemoveCommand}"></MenuItem>
+            <MenuItem Header="移动文件" Command="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.Tag.Playlist.MoveCommand}"></MenuItem>
+            <MenuItem Header="移动文件并移出列表" Command="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.Tag.Playlist.MoveAndRemoveCommand}"></MenuItem>
             <Separator/>
-            <MenuItem Header="Delete (Recycle Bin)" Command="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.Tag.Playlist.RecycleCommand}"></MenuItem>
-            <MenuItem Header="Delete (Permanently)" Command="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.Tag.Playlist.DeleteCommand}"></MenuItem>
+            <MenuItem Header="移至回收站" Command="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.Tag.Playlist.RecycleCommand}"></MenuItem>
+            <MenuItem Header="永久删除" Command="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.Tag.Playlist.DeleteCommand}"></MenuItem>
         </ContextMenu>
-        <ToolTip x:Key="EntryToolTip" Opened="ToolTip_OnOpened"
-                 Padding="0" Placement="Right" BorderThickness="0">
+        <ToolTip x:Key="EntryToolTip" x:Shared="False" Opened="ToolTip_OnOpened"
+                 Padding="0" Placement="Right" HorizontalOffset="8" BorderThickness="0">
             <local:VideoDetailsPreview />
         </ToolTip>
         <converters:DurationConverter x:Key="DurationConverter"/>
-        <Style TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
-            <Setter Property="Focusable" Value="False"/>
+        <Style x:Key="FavoriteGlyphStyle" TargetType="TextBlock">
+            <EventSetter Event="MouseLeftButtonUp" Handler="Favorite_OnClick"/>
+            <Setter Property="Text" Value="♡"/>
+            <Setter Property="Foreground" Value="{DynamicResource MediaMutedBrush}"/>
+            <Setter Property="FontSize" Value="{DynamicResource MediaSectionFontSize}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
             <Style.Triggers>
-                <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Opacity" Value="0.7"/>
-                </Trigger>
+                <DataTrigger Binding="{Binding IsFavorite}" Value="True">
+                    <Setter Property="Text" Value="♥"/>
+                    <Setter Property="Foreground" Value="{DynamicResource MediaFavoriteBrush}"/>
+                </DataTrigger>
             </Style.Triggers>
         </Style>
-        <Style TargetType="{x:Type CheckBox}" BasedOn="{StaticResource {x:Static ToolBar.CheckBoxStyleKey}}">
-            <Setter Property="Focusable" Value="False"/>
+        <Style x:Key="LibraryListButton" TargetType="Button" BasedOn="{StaticResource MediaButton}">
+            <Setter Property="MinHeight" Value="40"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Playlist.ViewStyle}" Value="{x:Static viewModels:PlaylistViewStyle.List}">
+                    <Setter Property="BorderBrush" Value="{DynamicResource MediaAccentBrush}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource MediaAccentBrush}"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="LibraryTileButton" TargetType="Button" BasedOn="{StaticResource MediaButton}">
+            <Setter Property="MinHeight" Value="40"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Playlist.ViewStyle}" Value="{x:Static viewModels:PlaylistViewStyle.Tiles}">
+                    <Setter Property="BorderBrush" Value="{DynamicResource MediaAccentBrush}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource MediaAccentBrush}"/>
+                </DataTrigger>
+            </Style.Triggers>
         </Style>
 
         <Style TargetType="ListBoxItem" x:Key="TileItemStyle">
             <EventSetter Event="MouseDoubleClick" Handler="PlaylistEntry_DoubleClicked"/>
-            <Setter Property="ToolTipService.BetweenShowDelay" Value="1000"/>
-            <Setter Property="ToolTipService.ShowDuration" Value="60000"/>
             <Setter Property="HorizontalContentAlignment" Value="Stretch"></Setter>
             <Setter Property="ContextMenu" Value="{StaticResource ItemContextMenu}"></Setter>
             <Setter Property="Tag" Value="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:PlaylistControl}, Path=DataContext}"/>
-            <Setter Property="ToolTip" Value="{StaticResource EntryToolTip}"/>
+            <Setter Property="Margin" Value="3"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
         </Style>
 
         <Style TargetType="ListBoxItem" x:Key="ListItemStyle">
             <EventSetter Event="MouseDoubleClick" Handler="PlaylistEntry_DoubleClicked"/>
-            <Setter Property="ToolTipService.BetweenShowDelay" Value="1000"/>
-            <Setter Property="ToolTipService.ShowDuration" Value="60000"/>
             <Setter Property="HorizontalContentAlignment" Value="Stretch"></Setter>
             <Setter Property="ContextMenu" Value="{StaticResource ItemContextMenu}"></Setter>
             <Setter Property="Tag" Value="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:PlaylistControl}, Path=DataContext}"/>
-            <Setter Property="ToolTip" Value="{StaticResource EntryToolTip}"/>
         </Style>
+        </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="257*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <Menu Grid.Row="0" Background="White" DataContext="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:PlaylistControl}, Path=ViewModel}">
-            <MenuItem Header="Playlist">
-                <MenuItem Header="Add Files (first)" Command="{Binding AddScriptsToPlaylistFirstCommand}" />
-                <MenuItem Header="Add Files (last)" Command="{Binding AddScriptsToPlaylistCommand}" />
-                <MenuItem Header="Add Folder (first)" Command="{Binding AddFolderToPlaylistFirstCommand}"/>
-                <MenuItem Header="Add Folder (last)" Command="{Binding AddFolderToPlaylistCommand}"/>
+        <WrapPanel Grid.Row="0" Margin="16,12,16,0" VerticalAlignment="Center">
+            <TextBlock Text="媒体列表" FontSize="{DynamicResource MediaHeadingFontSize}" FontWeight="SemiBold" Foreground="{DynamicResource MediaTextBrush}"
+                       VerticalAlignment="Center" Margin="0,0,16,0"/>
+            <Button x:Name="ListViewButton" Content="紧凑列表" Style="{StaticResource LibraryListButton}" Margin="0,0,6,0"
+                    AutomationProperties.Name="紧凑列表" Command="{Binding Playlist.SetViewStyleCommand}"
+                    CommandParameter="{x:Static viewModels:PlaylistViewStyle.List}"/>
+            <Button x:Name="TileViewButton" Content="封面卡片" Style="{StaticResource LibraryTileButton}" Margin="0,0,6,0"
+                    AutomationProperties.Name="封面卡片" Command="{Binding Playlist.SetViewStyleCommand}"
+                    CommandParameter="{x:Static viewModels:PlaylistViewStyle.Tiles}"/>
+        <Menu Background="Transparent" BorderThickness="0" Height="40" VerticalAlignment="Center"
+              DataContext="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:PlaylistControl}, Path=ViewModel}">
+            <MenuItem x:Name="LibraryMoreMenu" Header="更多 ···" Padding="12,10" AutomationProperties.Name="媒体列表更多操作">
+            <MenuItem Header="播放列表">
+                <MenuItem Header="添加文件到队首" Command="{Binding AddScriptsToPlaylistFirstCommand}" />
+                <MenuItem Header="添加文件到队尾" Command="{Binding AddScriptsToPlaylistCommand}" />
+                <MenuItem Header="添加文件夹到队首" Command="{Binding AddFolderToPlaylistFirstCommand}"/>
+                <MenuItem Header="添加文件夹到队尾" Command="{Binding AddFolderToPlaylistCommand}"/>
                 <Separator/>
-                <MenuItem Header="Remove Missing Entries" Command="{Binding RemoveMissingEntriesFromPlaylistCommand}"/>
-                <MenuItem Header="Remove Incomplete Entries" Command="{Binding RemoveIncompleteEntriesFromPlaylistCommand}"/>
-                <MenuItem Header="Recheck All Entries" Command="{Binding Playlist.RecheckAllCommand}"/>
+                <MenuItem Header="移除文件缺失的条目" Command="{Binding RemoveMissingEntriesFromPlaylistCommand}"/>
+                <MenuItem Header="移除不完整条目" Command="{Binding RemoveIncompleteEntriesFromPlaylistCommand}"/>
+                <MenuItem Header="重新检查所有条目" Command="{Binding Playlist.RecheckAllCommand}"/>
                 <Separator/>
-                <MenuItem Header="Scroll to current entry" Click="MnuScrollToCurrent"/>
+                <MenuItem Header="定位正在播放的视频" Click="MnuScrollToCurrent"/>
                 <Separator/>
-                <MenuItem Header="Load Playlist" Command="{Binding LoadPlaylistCommand}"/>
-                <MenuItem Header="Save Playlist" Command="{Binding SavePlaylistCommand}"/>
-                <MenuItem Header="Clear Playlist" Command="{Binding Playlist.ClearPlaylistCommand}"/>
+                <MenuItem Header="打开播放列表" Command="{Binding LoadPlaylistCommand}"/>
+                <MenuItem Header="保存播放列表" Command="{Binding SavePlaylistCommand}"/>
+                <MenuItem Header="清空播放列表" Command="{Binding Playlist.ClearPlaylistCommand}"/>
             </MenuItem>
-            <MenuItem Header="Generate">
+            <MenuItem Header="生成预览与热力图">
                 <MenuItem Header ="(For selected files)" IsEnabled="False"/>
-                <MenuItem Header="Generate Thumbnails" Command="{Binding Playlist.GenerateThumbnailsForSelectedVideosCommand}"></MenuItem>
-                <MenuItem Header="Generate Thumbnail Banners" Command="{Binding Playlist.GenerateThumbnailBannersForSelectedVideosCommand}"></MenuItem>
-                <MenuItem Header="Generate Previews" Command="{Binding Playlist.GeneratePreviewsForSelectedVideosCommand}"></MenuItem>
-                <MenuItem Header="Generate Heatmaps" Command="{Binding Playlist.GenerateHeatmapsForSelectedVideosCommand}"></MenuItem>
-                <MenuItem Header="Generate all" Command="{Binding Playlist.GenerateAllForSelectedVideosCommand}"></MenuItem>
+                <MenuItem Header="生成缩略图" Command="{Binding Playlist.GenerateThumbnailsForSelectedVideosCommand}"></MenuItem>
+                <MenuItem Header="生成缩略图横幅" Command="{Binding Playlist.GenerateThumbnailBannersForSelectedVideosCommand}"></MenuItem>
+                <MenuItem Header="生成预览" Command="{Binding Playlist.GeneratePreviewsForSelectedVideosCommand}"></MenuItem>
+                <MenuItem Header="生成热力图" Command="{Binding Playlist.GenerateHeatmapsForSelectedVideosCommand}"></MenuItem>
+                <MenuItem Header="生成全部预览资源" Command="{Binding Playlist.GenerateAllForSelectedVideosCommand}"></MenuItem>
                 <Separator/>
-                <MenuItem Header="Generate all missing files" Command="{Binding Playlist.GenerateAllForAllVideosCommand}"></MenuItem>
+                <MenuItem Header="补齐所有缺失的预览资源" Command="{Binding Playlist.GenerateAllForAllVideosCommand}"></MenuItem>
             </MenuItem>
-            <MenuItem Header="Sort">
-                <MenuItem Header="Duration (ascending)"  Command="{Binding Playlist.SortByDurationCommand}" CommandParameter="{shared:Boolean true}"/>
-                <MenuItem Header="Duration (descending)"  Command="{Binding Playlist.SortByDurationCommand}" CommandParameter="{shared:Boolean false}"/>
+            <MenuItem Header="排序">
+                <MenuItem Header="时长：从短到长"  Command="{Binding Playlist.SortByDurationCommand}" CommandParameter="{shared:Boolean true}"/>
+                <MenuItem Header="时长：从长到短"  Command="{Binding Playlist.SortByDurationCommand}" CommandParameter="{shared:Boolean false}"/>
                 <Separator/>
-                <MenuItem Header="Name (ascending)"  Command="{Binding Playlist.SortByNameCommand}" CommandParameter="{shared:Boolean true}"/>
-                <MenuItem Header="Name (descending)"  Command="{Binding Playlist.SortByNameCommand}" CommandParameter="{shared:Boolean false}"/>
+                <MenuItem Header="名称：升序"  Command="{Binding Playlist.SortByNameCommand}" CommandParameter="{shared:Boolean true}"/>
+                <MenuItem Header="名称：降序"  Command="{Binding Playlist.SortByNameCommand}" CommandParameter="{shared:Boolean false}"/>
                 <Separator/>
-                <MenuItem Header="Path (ascending)"  Command="{Binding Playlist.SortByPathCommand}" CommandParameter="{shared:Boolean true}"/>
-                <MenuItem Header="Path (descending)"  Command="{Binding Playlist.SortByPathCommand}" CommandParameter="{shared:Boolean false}"/>
+                <MenuItem Header="路径：升序"  Command="{Binding Playlist.SortByPathCommand}" CommandParameter="{shared:Boolean true}"/>
+                <MenuItem Header="路径：降序"  Command="{Binding Playlist.SortByPathCommand}" CommandParameter="{shared:Boolean false}"/>
                 <Separator/>
-                <MenuItem Header="Creation time (Media, ascending)"  Command="{Binding Playlist.SortByMediaCreationTime}" CommandParameter="{shared:Boolean true}"/>
-                <MenuItem Header="Creation time (Media, descending)"  Command="{Binding Playlist.SortByMediaCreationTime}" CommandParameter="{shared:Boolean false}"/>
-                <MenuItem Header="Creation time (Script, ascending)"  Command="{Binding Playlist.SortByScriptCreationTime}" CommandParameter="{shared:Boolean true}"/>
-                <MenuItem Header="Creation time (Script, descending)"  Command="{Binding Playlist.SortByScriptCreationTime}" CommandParameter="{shared:Boolean false}"/>
+                <MenuItem Header="视频创建时间：升序"  Command="{Binding Playlist.SortByMediaCreationTime}" CommandParameter="{shared:Boolean true}"/>
+                <MenuItem Header="视频创建时间：降序"  Command="{Binding Playlist.SortByMediaCreationTime}" CommandParameter="{shared:Boolean false}"/>
+                <MenuItem Header="脚本创建时间：升序"  Command="{Binding Playlist.SortByScriptCreationTime}" CommandParameter="{shared:Boolean true}"/>
+                <MenuItem Header="脚本创建时间：降序"  Command="{Binding Playlist.SortByScriptCreationTime}" CommandParameter="{shared:Boolean false}"/>
                 <Separator/>
-                <MenuItem Header="Shuffle" Command="{Binding Playlist.SortShuffleCommand}"/>
+                <MenuItem Header="随机排序" Command="{Binding Playlist.SortShuffleCommand}"/>
             </MenuItem>
-            <MenuItem Header="Style">
-                <MenuItem Header="List" Command="{Binding Playlist.SetViewStyleCommand}" CommandParameter="{x:Static viewModels:PlaylistViewStyle.List}"></MenuItem>
-                <MenuItem Header="Tiles" Command="{Binding Playlist.SetViewStyleCommand}" CommandParameter="{x:Static viewModels:PlaylistViewStyle.Tiles}"></MenuItem>
+            <MenuItem Header="显示方式">
+                <MenuItem Header="紧凑列表" Command="{Binding Playlist.SetViewStyleCommand}" CommandParameter="{x:Static viewModels:PlaylistViewStyle.List}"></MenuItem>
+                <MenuItem Header="封面卡片" Command="{Binding Playlist.SetViewStyleCommand}" CommandParameter="{x:Static viewModels:PlaylistViewStyle.Tiles}"></MenuItem>
+            </MenuItem>
             </MenuItem>
         </Menu>
+        </WrapPanel>
 
-        <TextBox x:Name="txtSearch" Text="{Binding Path=Playlist.Filter, UpdateSourceTrigger=PropertyChanged}" Height="22" Margin="10,10,10,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top"/>
+        <Grid x:Name="LibraryFilterGrid" Grid.Row="1" Margin="16,12,16,8" VerticalAlignment="Top">
+            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="0.65*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Border x:Name="SearchBorder" Grid.Column="0" Height="40" Margin="0,0,8,0" Background="{DynamicResource MediaSurfaceBrush}"
+                    BorderBrush="{DynamicResource MediaBorderBrush}" BorderThickness="1" CornerRadius="8">
+                <DockPanel Margin="10,0">
+                    <TextBlock Text="搜索" Foreground="{DynamicResource MediaMutedBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBox x:Name="txtSearch" Text="{Binding Path=Playlist.Filter, UpdateSourceTrigger=PropertyChanged}"
+                             BorderThickness="0" Background="Transparent" VerticalContentAlignment="Center"/>
+                </DockPanel>
+            </Border>
+            <ComboBox x:Name="TagFilter" Grid.Column="1" Height="40" Margin="0,0,8,0" Padding="9,0"
+                      ItemsSource="{Binding Playlist.AvailableTags}"
+                      SelectedItem="{Binding Playlist.SelectedTagFilter, Mode=TwoWay}"
+                      DisplayMemberPath="DisplayText" ToolTip="按中文标签筛选播放列表"
+                      Background="{DynamicResource MediaSurfaceBrush}" BorderBrush="{DynamicResource MediaBorderBrush}" BorderThickness="1"/>
+            <ToggleButton x:Name="FavoriteFilter" Grid.Column="2" Height="40" MinWidth="96" Style="{StaticResource MediaToggleButton}"
+                          IsChecked="{Binding Playlist.FavoritesOnly, Mode=TwoWay}" Background="{DynamicResource MediaSurfaceBrush}" BorderBrush="{DynamicResource MediaBorderBrush}"
+                          BorderThickness="1" ToolTip="只显示已收藏的视频">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <TextBlock Text="♥" Foreground="{DynamicResource MediaFavoriteBrush}" FontSize="{DynamicResource MediaBodyFontSize}" Margin="0,0,6,0"/>
+                    <TextBlock Text="仅看收藏" Foreground="{DynamicResource MediaTextBrush}" VerticalAlignment="Center"/>
+                </StackPanel>
+            </ToggleButton>
+            <TextBlock x:Name="MetadataStatus" Grid.Row="2" Grid.ColumnSpan="3" Margin="0,8,0,0" TextWrapping="Wrap"
+                       Text="{Binding MetadataStatusMessage, RelativeSource={RelativeSource AncestorType={x:Type local:PlaylistControl}}}"
+                       Foreground="{DynamicResource MediaMutedBrush}" FontSize="{DynamicResource MediaCaptionFontSize}">
+                <TextBlock.Style><Style TargetType="TextBlock"><Style.Triggers>
+                    <Trigger Property="Text" Value=""><Setter Property="Visibility" Value="Collapsed"/></Trigger>
+                </Style.Triggers></Style></TextBlock.Style>
+            </TextBlock>
+        </Grid>
 
         <!-- The MaxHeight Binding resolves an unbelievably stupid perforamnce issue. Even though the Stackpanel that layouts the ListBoxItems is virtualized, every single Element is layouted (for the Height!) -->
-        <ListBox MaxHeight="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Grid}}, Path=ActualHeight}" x:Name="lstEntries" Grid.Row="1" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Margin="10,41,10,77" 
+        <ListBox MaxHeight="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Grid}}, Path=ActualHeight}" x:Name="lstEntries" Grid.Row="2" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.CanContentScroll="True" Margin="8,0,8,8"
+                 Background="Transparent" BorderThickness="0" Padding="2"
                  ItemsSource="{Binding Path=Playlist.FilteredEntries}" SelectedItem="{Binding Path=Playlist.SelectedEntry, Mode=TwoWay}" SelectionChanged="LstEntries_OnSelectionChanged" 
                  AllowDrop="True" Drop="ListBox_Drop" SelectionMode="Extended"
+                 VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
                  >
             <ListBox.Style>
                 <Style TargetType="ListBox">
@@ -133,34 +214,91 @@
                                 <Setter.Value>
 
                                     <DataTemplate DataType="viewModels:PlaylistEntry">
-                                        <DockPanel HorizontalAlignment="Stretch">
-                                            <DockPanel.Style>
-                                                <Style TargetType="FrameworkElement">
-                                                    <Style.Setters>
-                                                        <Setter Property="TextElement.Foreground" Value="DimGray"/>
-                                                    </Style.Setters>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding Status}" Value="{x:Static viewModels:PlaylistEntryStatus.Loading}">
-                                                            <Setter Property="TextElement.Foreground" Value="DimGray"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding Status}" Value="{x:Static viewModels:PlaylistEntryStatus.FilesOk}">
-                                                            <Setter Property="TextElement.Foreground" Value="Black"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding Status}" Value="{x:Static viewModels:PlaylistEntryStatus.MissingFile}">
-                                                            <Setter Property="TextElement.Foreground" Value="Red"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding Playing}" Value="True">
-                                                            <Setter Property="TextElement.FontWeight" Value="Bold"></Setter>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </DockPanel.Style>
-                                            <Grid Background="Black" DockPanel.Dock="Right" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Width="100" Visibility="{Binding Converter={StaticResource booleanToVisibilityConverter}, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type local:PlaylistControl}}, Path=ShowHeatmap}">
-                                                <Image Source="{Binding HeatMap}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Stretch="Fill"/>
+                                        <Border x:Name="LibraryListCard" Margin="3" Padding="8" Background="{DynamicResource MediaSurfaceBrush}" BorderBrush="{DynamicResource MediaBorderBrush}"
+                                                BorderThickness="1" CornerRadius="9">
+                                            <Grid MinHeight="94">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <Border Grid.Column="0" Width="{Binding PreviewWidth,RelativeSource={RelativeSource AncestorType={x:Type local:PlaylistControl}}}" Height="92" HorizontalAlignment="Left"
+                                                        Background="{DynamicResource MediaRaisedBrush}" CornerRadius="6" ClipToBounds="True"
+                                                        ToolTip="{StaticResource EntryToolTip}"
+                                                        ToolTipService.InitialShowDelay="350" ToolTipService.ShowDuration="60000">
+                                                    <Grid>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="76"/>
+                                                            <RowDefinition Height="16"/>
+                                                        </Grid.RowDefinitions>
+                                                        <Image Source="{Binding Preview}" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                                        <Image Grid.Row="1" Source="{Binding HeatMap}" Stretch="Fill"
+                                                               Visibility="{Binding Converter={StaticResource booleanToVisibilityConverter}, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type local:PlaylistControl}}, Path=ShowHeatmap}"/>
+                                                        <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,4,4,0"
+                                                                Width="30" Height="30" Background="{DynamicResource MediaRaisedBrush}" CornerRadius="15">
+                                                            <TextBlock Style="{StaticResource FavoriteGlyphStyle}" HorizontalAlignment="Center"
+                                                                       VerticalAlignment="Center" Cursor="Hand" ToolTip="收藏/取消收藏"/>
+                                                        </Border>
+                                                    </Grid>
+                                                </Border>
+
+                                                <StackPanel Grid.Column="1" Margin="10,1,14,0" VerticalAlignment="Top">
+                                                        <TextBlock Text="{Binding DisplayTitle}" FontSize="{DynamicResource MediaBodyFontSize}" FontWeight="SemiBold"
+                                                                   Foreground="{DynamicResource MediaTextBrush}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding DisplayTitle}"/>
+                                                    <local:CompactTagStrip Tags="{Binding TagItems}" Margin="0,6,0,0"/>
+                                                    <TextBlock Text="{Binding ScriptFileDisplay}" Foreground="{DynamicResource MediaMutedBrush}" FontSize="{DynamicResource MediaCaptionFontSize}"
+                                                               Margin="0,1,0,0" TextTrimming="CharacterEllipsis" ToolTip="{Binding ScriptFileDisplay}"/>
+                                                </StackPanel>
+
+                                                <Grid Grid.Column="2" Width="400" Margin="4,0,2,0" VerticalAlignment="Center" Visibility="{Binding DetailsVisible,RelativeSource={RelativeSource AncestorType={x:Type local:PlaylistControl}}}">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="0"/>
+                                                        <ColumnDefinition Width="72"/>
+                                                        <ColumnDefinition Width="72"/>
+                                                        <ColumnDefinition Width="72"/>
+                                                        <ColumnDefinition Width="72"/>
+                                                        <ColumnDefinition Width="68"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel Grid.Column="1">
+                                                        <TextBlock Text="视频时长" Foreground="{DynamicResource MediaMutedBrush}" FontSize="{DynamicResource MediaCaptionFontSize}" TextAlignment="Center"/>
+                                                        <TextBlock Text="{Binding Duration, Converter={StaticResource DurationConverter}}" Foreground="{DynamicResource MediaTextBrush}"
+                                                                   FontSize="{DynamicResource MediaCaptionFontSize}" FontWeight="SemiBold" TextAlignment="Center" Margin="0,4,0,0"/>
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="2">
+                                                        <TextBlock Text="脚本时长" Foreground="{DynamicResource MediaMutedBrush}" FontSize="{DynamicResource MediaCaptionFontSize}" TextAlignment="Center"/>
+                                                        <TextBlock Text="{Binding ScriptDurationDisplay}" Foreground="{DynamicResource MediaTextBrush}" FontSize="{DynamicResource MediaCaptionFontSize}"
+                                                                   FontWeight="SemiBold" TextAlignment="Center" Margin="0,4,0,0"/>
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="3">
+                                                        <TextBlock Text="动作数" Foreground="{DynamicResource MediaMutedBrush}" FontSize="{DynamicResource MediaCaptionFontSize}" TextAlignment="Center"/>
+                                                        <TextBlock Text="{Binding ScriptActionCountDisplay}" Foreground="{DynamicResource MediaTextBrush}" FontSize="{DynamicResource MediaCaptionFontSize}"
+                                                                   FontWeight="SemiBold" TextAlignment="Center" Margin="0,4,0,0"/>
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="4">
+                                                        <TextBlock Text="最大速度" Foreground="{DynamicResource MediaMutedBrush}" FontSize="{DynamicResource MediaCaptionFontSize}" TextAlignment="Center"/>
+                                                        <TextBlock Text="{Binding ScriptMaxSpeedDisplay}" Foreground="{DynamicResource MediaTextBrush}" FontSize="{DynamicResource MediaCaptionFontSize}"
+                                                                   FontWeight="SemiBold" TextAlignment="Center" Margin="0,4,0,0"/>
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="5">
+                                                        <TextBlock Text="平均速度" Foreground="{DynamicResource MediaMutedBrush}" FontSize="{DynamicResource MediaCaptionFontSize}" TextAlignment="Center"/>
+                                                        <TextBlock Text="{Binding ScriptAverageSpeedDisplay}" Foreground="{DynamicResource MediaTextBrush}" FontSize="{DynamicResource MediaCaptionFontSize}"
+                                                                   FontWeight="SemiBold" TextAlignment="Center" Margin="0,4,0,0"/>
+                                                    </StackPanel>
+                                                </Grid>
                                             </Grid>
-                                            <TextBlock Text="{Binding Path=Duration, Converter={StaticResource DurationConverter}}" DockPanel.Dock="Right" Margin="8,0,2,0" />
-                                            <TextBlock Text="{Binding Shortname}" DockPanel.Dock="Left" TextTrimming="CharacterEllipsis"  Margin="2,0,0,0"/>
-                                        </DockPanel>
+                                        </Border>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsMouseOver}" Value="True">
+                                                <Setter TargetName="LibraryListCard" Property="Background" Value="{DynamicResource MediaRaisedBrush}"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected}" Value="True">
+                                                <Setter TargetName="LibraryListCard" Property="BorderBrush" Value="{DynamicResource MediaAccentBrush}"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsKeyboardFocusWithin}" Value="True">
+                                                <Setter TargetName="LibraryListCard" Property="BorderBrush" Value="{DynamicResource MediaAccentBrush}"/>
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
                                     </DataTemplate>
                                 </Setter.Value>
                             </Setter>
@@ -170,8 +308,7 @@
                             <Setter Property="ItemsPanel">
                                 <Setter.Value>
                                     <ItemsPanelTemplate>
-                                        <!--<local:VirtualizingWrapPanel ItemWidth="150" ItemHeight="121"/>-->
-                                        <WrapPanel ItemWidth="150" ItemHeight="121"/>
+                                        <local:VirtualizingWrapPanel ItemWidth="252" ItemHeight="270"/>
                                     </ItemsPanelTemplate>
                                 </Setter.Value>
                             </Setter>
@@ -179,47 +316,87 @@
                             <Setter Property="ItemTemplate">
                                 <Setter.Value>
                                     <DataTemplate DataType="viewModels:PlaylistEntry">
-                                        <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                                            <Grid.Style>
-                                                <Style TargetType="FrameworkElement">
-                                                    <Style.Setters>
-                                                        <Setter Property="TextElement.Foreground" Value="DimGray"/>
-                                                    </Style.Setters>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding Status}" Value="{x:Static viewModels:PlaylistEntryStatus.Loading}">
-                                                            <Setter Property="TextElement.Foreground" Value="DimGray"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding Status}" Value="{x:Static viewModels:PlaylistEntryStatus.FilesOk}">
-                                                            <Setter Property="TextElement.Foreground" Value="Black"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding Status}" Value="{x:Static viewModels:PlaylistEntryStatus.MissingFile}">
-                                                            <Setter Property="TextElement.Foreground" Value="Red"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding Playing}" Value="True">
-                                                            <Setter Property="TextElement.FontWeight" Value="Bold"></Setter>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Grid.Style>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="*"/>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                            </Grid.RowDefinitions>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
+                                        <Border x:Name="LibraryTileCard" Margin="4" Background="{DynamicResource MediaSurfaceBrush}" BorderBrush="{DynamicResource MediaBorderBrush}"
+                                                 BorderThickness="1" CornerRadius="9" SnapsToDevicePixels="True"
+                                                 ToolTip="{StaticResource EntryToolTip}"
+                                                 ToolTipService.InitialShowDelay="350" ToolTipService.ShowDuration="60000">
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="154"/>
+                                                    <RowDefinition Height="16"/>
+                                                    <RowDefinition Height="*"/>
+                                                </Grid.RowDefinitions>
 
-                                            <Grid Grid.Row="0" Grid.ColumnSpan="2"  Width="150" Height="85" Background="Black" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                                                <Image RenderOptions.BitmapScalingMode="HighQuality" Stretch="Uniform" Source="{Binding Path=Preview}"></Image>
+                                                <Grid Grid.Row="0" Background="{DynamicResource MediaRaisedBrush}">
+                                                    <Image RenderOptions.BitmapScalingMode="HighQuality" Stretch="UniformToFill" Source="{Binding Preview}"/>
+                                                    <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,0"
+                                                            Padding="7,3" Background="{DynamicResource MediaBadgeBrush}" CornerRadius="10">
+                                                        <TextBlock Text="{Binding Duration, Converter={StaticResource DurationConverter}}"
+                                                                   Foreground="{DynamicResource MediaTextBrush}" FontSize="{DynamicResource MediaCaptionFontSize}" FontWeight="SemiBold"/>
+                                                    </Border>
+
+                                                    <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8,8,0,0"
+                                                            Width="30" Height="30" Background="{DynamicResource MediaRaisedBrush}" CornerRadius="15">
+                                                        <TextBlock Style="{StaticResource FavoriteGlyphStyle}" FontSize="{DynamicResource MediaSectionFontSize}" HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center" Cursor="Hand" ToolTip="收藏/取消收藏"/>
+                                                    </Border>
+
+                                                    <Border x:Name="ScriptOverlay" VerticalAlignment="Bottom" Height="72" Background="{DynamicResource MediaContentOverlayBrush}"
+                                                            Padding="8,5" Opacity="0" IsHitTestVisible="False">
+                                                        <StackPanel>
+                                                            <TextBlock Text="{Binding ScriptFileDisplay}" Foreground="{DynamicResource MediaTextBrush}" FontSize="{DynamicResource MediaCaptionFontSize}" FontWeight="SemiBold"
+                                                                       TextTrimming="CharacterEllipsis"/>
+                                                            <Grid Margin="0,5,0,0">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/>
+                                                                </Grid.ColumnDefinitions>
+                                                                <StackPanel Grid.Column="0">
+                                                                    <TextBlock Text="时长" Foreground="{DynamicResource MediaMutedBrush}" FontSize="{DynamicResource MediaCaptionFontSize}" TextAlignment="Center"/>
+                                                                    <TextBlock Text="{Binding ScriptDurationDisplay}" Foreground="{DynamicResource MediaTextBrush}" FontSize="{DynamicResource MediaCaptionFontSize}" TextAlignment="Center"/>
+                                                                </StackPanel>
+                                                                <StackPanel Grid.Column="1">
+                                                                    <TextBlock Text="动作" Foreground="{DynamicResource MediaMutedBrush}" FontSize="{DynamicResource MediaCaptionFontSize}" TextAlignment="Center"/>
+                                                                    <TextBlock Text="{Binding ScriptActionCountDisplay}" Foreground="{DynamicResource MediaTextBrush}" FontSize="{DynamicResource MediaCaptionFontSize}" TextAlignment="Center"/>
+                                                                </StackPanel>
+                                                                <StackPanel Grid.Column="2">
+                                                                    <TextBlock Text="最大" Foreground="{DynamicResource MediaMutedBrush}" FontSize="{DynamicResource MediaCaptionFontSize}" TextAlignment="Center"/>
+                                                                    <TextBlock Text="{Binding ScriptMaxSpeedDisplay}" Foreground="{DynamicResource MediaTextBrush}" FontSize="{DynamicResource MediaCaptionFontSize}" TextAlignment="Center"/>
+                                                                </StackPanel>
+                                                                <StackPanel Grid.Column="3">
+                                                                    <TextBlock Text="平均" Foreground="{DynamicResource MediaMutedBrush}" FontSize="{DynamicResource MediaCaptionFontSize}" TextAlignment="Center"/>
+                                                                    <TextBlock Text="{Binding ScriptAverageSpeedDisplay}" Foreground="{DynamicResource MediaTextBrush}" FontSize="{DynamicResource MediaCaptionFontSize}" TextAlignment="Center"/>
+                                                                </StackPanel>
+                                                            </Grid>
+                                                        </StackPanel>
+                                                    </Border>
+                                                </Grid>
+                                                <Grid Grid.Row="1" Background="{DynamicResource MediaBackgroundBrush}">
+                                                    <Image Source="{Binding HeatMap}" Stretch="Fill"/>
+                                                </Grid>
+
+                                                <StackPanel Grid.Row="2" Margin="10,7,10,7">
+                                                    <TextBlock Text="{Binding DisplayTitle}" FontSize="{DynamicResource MediaBodyFontSize}" FontWeight="SemiBold"
+                                                               Foreground="{DynamicResource MediaTextBrush}" TextTrimming="CharacterEllipsis" ToolTip="{Binding DisplayTitle}"/>
+                                                    <TextBlock Text="{Binding TypeDisplay}" Foreground="{DynamicResource MediaMutedBrush}"
+                                                               FontSize="{DynamicResource MediaCaptionFontSize}" Margin="0,2,0,0" TextTrimming="CharacterEllipsis"/>
+                                                    <local:CompactTagStrip Tags="{Binding TagItems}" Margin="0,6,0,0"/>
+                                                </StackPanel>
                                             </Grid>
-                                            <Grid Grid.Row="1" Grid.ColumnSpan="2" Grid.Column="0" Background="Black" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Height="16">
-                                                <Image Source="{Binding HeatMap}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Stretch="Fill"/>
-                                            </Grid>
-                                            <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding Shortname}" TextTrimming="CharacterEllipsis" />
-                                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Path=Duration, Converter={StaticResource DurationConverter}}" />
-                                        </Grid>
+                                        </Border>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsMouseOver}" Value="True">
+                                                <Setter TargetName="LibraryTileCard" Property="Background" Value="{DynamicResource MediaRaisedBrush}"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected}" Value="True">
+                                                <Setter TargetName="LibraryTileCard" Property="BorderBrush" Value="{DynamicResource MediaAccentBrush}"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsKeyboardFocusWithin}" Value="True">
+                                                <Setter TargetName="LibraryTileCard" Property="BorderBrush" Value="{DynamicResource MediaAccentBrush}"/>
+                                            </DataTrigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="ScriptOverlay" Property="Opacity" Value="1"/>
+                                            </Trigger>
+                                        </DataTemplate.Triggers>
                                     </DataTemplate>
                                 </Setter.Value>
                             </Setter>
@@ -229,56 +406,54 @@
             </ListBox.Style>
         </ListBox>
 
-        <TextBlock Grid.Row="1" Grid.Column="0" Margin="10,0,10,37" Height="35" VerticalAlignment="Bottom">
-            <Run Text="Playlist: "/>
+        <TextBlock Grid.Row="3" Margin="16,0,16,8" Padding="0,4" Background="Transparent"
+                   Foreground="{DynamicResource MediaMutedBrush}" FontSize="{DynamicResource MediaCaptionFontSize}" TextWrapping="Wrap">
+            <Run Text="媒体："/>
             <Run Text="{Binding Mode=OneWay, Path=Playlist.Entries.Count}"/>
-            <Run Text="entries ["/>
+            <Run Text=" 项 · "/>
             <Run Text="{Binding Mode=OneWay, Path=Playlist.TotalDurationString}"/>
-            <Run Text="]"/>
-            <LineBreak/>
-            <Run Text="Selection: "/>
+            <Run Text="    选中："/>
             <Run Text="{Binding Mode=OneWay, Path=Playlist.SelectedEntries.Count}"/>
-            <Run Text="entries ["/>
+            <Run Text=" 项 · "/>
             <Run Text="{Binding Mode=OneWay, Path=Playlist.SelectedDurationString}"/>
-            <Run Text="]"/>
         </TextBlock>
 
-        <UniformGrid Margin="10,0,10,10" Height="27" VerticalAlignment="Bottom" Grid.Row="1" Columns="9">
-            <Button ToolTip="Move First" Command="{Binding Playlist.MoveSelectedEntryFirstCommand}" 
+        <UniformGrid Margin="12,0,12,12" Height="40" Background="Transparent" Grid.Row="4" Columns="9">
+            <Button Style="{StaticResource MediaIconButton}" Height="40" Width="Auto" MinWidth="0" AutomationProperties.Name="{Binding RelativeSource={RelativeSource Self}, Path=ToolTip}" ToolTip="移至队首" Command="{Binding Playlist.MoveSelectedEntryFirstCommand}" 
                     HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                <controls:AwesomeIcon Icon="Arrow_Circle_Up_Solid"/>
+                <controls:AwesomeIcon Width="22" Height="22" Icon="Arrow_Circle_Up_Solid"/>
             </Button>
-            <Button ToolTip="Move Up" Command="{Binding Playlist.MoveSelectedEntryUpCommand}" 
+            <Button Style="{StaticResource MediaIconButton}" Height="40" Width="Auto" MinWidth="0" AutomationProperties.Name="{Binding RelativeSource={RelativeSource Self}, Path=ToolTip}" ToolTip="上移" Command="{Binding Playlist.MoveSelectedEntryUpCommand}" 
                     HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                <controls:AwesomeIcon Icon="Arrowup_Solid"/>
+                <controls:AwesomeIcon Width="22" Height="22" Icon="Arrowup_Solid"/>
             </Button>
-            <Button ToolTip="Move Down" Command="{Binding Playlist.MoveSelectedEntryDownCommand}"
+            <Button Style="{StaticResource MediaIconButton}" Height="40" Width="Auto" MinWidth="0" AutomationProperties.Name="{Binding RelativeSource={RelativeSource Self}, Path=ToolTip}" ToolTip="下移" Command="{Binding Playlist.MoveSelectedEntryDownCommand}"
                     HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                <controls:AwesomeIcon Icon="Arrowdown_Solid"/>
+                <controls:AwesomeIcon Width="22" Height="22" Icon="Arrowdown_Solid"/>
             </Button>
-            <Button ToolTip="Move Last" Command="{Binding Playlist.MoveSelectedEntryLastCommand}"
+            <Button Style="{StaticResource MediaIconButton}" Height="40" Width="Auto" MinWidth="0" AutomationProperties.Name="{Binding RelativeSource={RelativeSource Self}, Path=ToolTip}" ToolTip="移至队尾" Command="{Binding Playlist.MoveSelectedEntryLastCommand}"
                     HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                <controls:AwesomeIcon Icon="Arrow_Circle_Down_Solid"/>
+                <controls:AwesomeIcon Width="22" Height="22" Icon="Arrow_Circle_Down_Solid"/>
             </Button>
-            <Button ToolTip="Remove" Command="{Binding Playlist.RemoveSelectedEntryCommand}" 
+            <Button Style="{StaticResource MediaIconButton}" Height="40" Width="Auto" MinWidth="0" AutomationProperties.Name="{Binding RelativeSource={RelativeSource Self}, Path=ToolTip}" ToolTip="移除选中条目" Command="{Binding Playlist.RemoveSelectedEntryCommand}" 
                     HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                <controls:AwesomeIcon Icon="Times_Solid"/>
+                <controls:AwesomeIcon Width="22" Height="22" Icon="Times_Solid"/>
             </Button>
-            <CheckBox ToolTip="Shuffle" IsChecked="{Binding Playlist.Shuffle}"
+            <CheckBox Style="{StaticResource TransportToggle}" Height="40" Width="Auto" MinWidth="0" AutomationProperties.Name="{Binding RelativeSource={RelativeSource Self}, Path=ToolTip}" ToolTip="随机播放" IsChecked="{Binding Playlist.Shuffle}"
                       HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                <controls:AwesomeIcon Icon="Random_Solid"/>
+                <controls:AwesomeIcon Width="22" Height="22" Icon="Random_Solid"/>
             </CheckBox>
-            <CheckBox ToolTip="Repeat" IsChecked="{Binding Playlist.Repeat}" 
+            <CheckBox Style="{StaticResource TransportToggle}" Height="40" Width="Auto" MinWidth="0" AutomationProperties.Name="{Binding RelativeSource={RelativeSource Self}, Path=ToolTip}" ToolTip="循环播放" IsChecked="{Binding Playlist.Repeat}" 
                       HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                <controls:AwesomeIcon Icon="Redo_Solid"/>
+                <controls:AwesomeIcon Width="22" Height="22" Icon="Redo_Solid"/>
             </CheckBox>
-            <CheckBox ToolTip="Repeat Single File" IsChecked="{Binding Playlist.RepeatSingleFile}" 
+            <CheckBox Style="{StaticResource TransportToggle}" Height="40" Width="Auto" MinWidth="0" AutomationProperties.Name="{Binding RelativeSource={RelativeSource Self}, Path=ToolTip}" ToolTip="单曲循环" IsChecked="{Binding Playlist.RepeatSingleFile}" 
                       HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                <controls:AwesomeIcon Icon="Redo_Solid"/>
+                <controls:AwesomeIcon Width="22" Height="22" Icon="Redo_Solid"/>
             </CheckBox>
-            <CheckBox ToolTip="Random Chapters" IsChecked="{Binding Playlist.RandomChapters}" 
+            <CheckBox Style="{StaticResource TransportToggle}" Height="40" Width="Auto" MinWidth="0" AutomationProperties.Name="{Binding RelativeSource={RelativeSource Self}, Path=ToolTip}" ToolTip="随机章节" IsChecked="{Binding Playlist.RandomChapters}" 
                       HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                <controls:AwesomeIcon Icon="Bookmark_Solid"/>
+                <controls:AwesomeIcon Width="22" Height="22" Icon="Bookmark_Solid"/>
             </CheckBox>
         </UniformGrid>
     </Grid>

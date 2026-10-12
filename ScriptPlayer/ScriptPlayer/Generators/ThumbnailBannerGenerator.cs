@@ -93,7 +93,7 @@ namespace ScriptPlayer.Generators
             Typeface typefaceBold = new Typeface(new FontFamily(font), new FontStyle(), FontWeights.Bold, FontStretches.Normal);
             Typeface typefaceNormal = new Typeface(new FontFamily(font), new FontStyle(), FontWeights.Normal, FontStretches.Normal);
 
-            ImageSource logo = new BitmapImage(new Uri("pack://application:,,,/Images/ScriptPlayerIcon.png", UriKind.RelativeOrAbsolute));
+            ImageSource logo = new BitmapImage(new Uri("pack://application:,,,/ScriptPlayer;component/Images/ScriptPlayerIcon.png", UriKind.RelativeOrAbsolute));
 
             DrawingVisual image = new DrawingVisual();
             using (DrawingContext dc = image.RenderOpen())

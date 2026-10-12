@@ -5,15 +5,20 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ScriptPlayer.Dialogs"
         mc:Ignorable="d" WindowStartupLocation="CenterOwner" WindowStyle="ToolWindow"
-        Title="VLC Connection Settings" Height="137.288" Width="282.839">
-    <Grid>
-        <TextBlock HorizontalAlignment="Left" Margin="10,11,0,0" TextWrapping="Wrap" Text="IP : Port" VerticalAlignment="Top"/>
-        <TextBox Name="txtIpPort" Height="23" Margin="81,10,10,0" VerticalAlignment="Top"/>
+        Title="VLC Connection Settings" Height="240" Width="440" MinWidth="320">
+    <Grid Margin="16">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <Grid.ColumnDefinitions><ColumnDefinition Width="112"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
 
-        <TextBlock HorizontalAlignment="Left" Margin="10,39,0,0" TextWrapping="Wrap" Text="Password" VerticalAlignment="Top"/>
-        <PasswordBox x:Name="txtPassword" Height="23" Margin="81,38,10,0" VerticalAlignment="Top"/>
+        <TextBlock Grid.Row="0" TextWrapping="Wrap" Text="IP : Port" VerticalAlignment="Center" Margin="0,0,16,12"/>
+        <TextBox Name="txtIpPort" Grid.Row="0" Grid.Column="1" MinHeight="36" Margin="0,0,0,12"/>
 
-        <Button Content="Ok" IsDefault="True" HorizontalAlignment="Right" Margin="0,0,90,11" VerticalAlignment="Bottom" Width="75" Click="ButtonBase_OnClick"/>
-        <Button Content="Cancel" IsCancel="True" HorizontalAlignment="Right" Margin="0,0,10,11" VerticalAlignment="Bottom" Width="75"/>
+        <TextBlock Grid.Row="1" TextWrapping="Wrap" Text="Password" VerticalAlignment="Center" Margin="0,0,16,12"/>
+        <PasswordBox x:Name="txtPassword" Grid.Row="1" Grid.Column="1" MinHeight="36" Margin="0,0,0,12"/>
+
+        <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+            <Button Content="Ok" IsDefault="True" Width="88" Margin="0,0,8,0" Click="ButtonBase_OnClick"/>
+            <Button Content="Cancel" IsCancel="True" Width="88"/>
+        </StackPanel>
     </Grid>
 </Window>

@@ -53,7 +53,7 @@ namespace ScriptPlayer.Dialogs
                 .Where(t => !string.IsNullOrWhiteSpace(t))
                 .ToList();
 
-            DialogResult = true;
+            InlineDialogService.Complete(this, true);
         }
     }
 }

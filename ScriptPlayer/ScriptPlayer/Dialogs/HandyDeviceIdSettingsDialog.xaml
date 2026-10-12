@@ -7,16 +7,17 @@
         mc:Ignorable="d" WindowStartupLocation="CenterOwner" WindowStyle="ToolWindow"
         Title="Handy Device Id Settings" Height="175.175" Width="364.738" Topmost="True">
     <Grid>
-        <TextBlock HorizontalAlignment="Left" Margin="10,11,0,0" TextWrapping="Wrap" Text="Device Id" VerticalAlignment="Top"/>
-        <TextBox x:Name="deviceId" Height="23" Margin="81,10,10,0" VerticalAlignment="Top"/>
-
-        <TextBlock HorizontalAlignment="Left" Margin="10,39,0,0" TextWrapping="Wrap" Text="Local IP" VerticalAlignment="Top"/>
-        <TextBox x:Name="localIpOverride" Height="23" Margin="81,38,10,0" VerticalAlignment="Top"/>
-
-        <TextBlock HorizontalAlignment="Left" Margin="10,67,0,0" TextWrapping="Wrap" Text="Port" VerticalAlignment="Top"/>
-        <TextBox x:Name="portOverride" Height="23" Margin="81,66,10,0" VerticalAlignment="Top"/>
-
-        <Button Content="Ok" IsDefault="True" HorizontalAlignment="Right" Margin="0,0,90,11" VerticalAlignment="Bottom" Width="75" Click="Button_Click"/>
-        <Button Content="Cancel" IsCancel="True" HorizontalAlignment="Right" Margin="0,0,10,11" VerticalAlignment="Bottom" Width="75"/>
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+        <TextBlock Text="Device Id" Margin="0,0,12,12" VerticalAlignment="Center"/>
+        <PasswordBox x:Name="deviceId" Grid.Column="1" Margin="0,0,0,12"/>
+        <TextBlock Grid.Row="1" Text="Local IP" Margin="0,0,12,12" VerticalAlignment="Center"/>
+        <TextBox x:Name="localIpOverride" Grid.Row="1" Grid.Column="1" Margin="0,0,0,12"/>
+        <TextBlock Grid.Row="2" Text="Port" Margin="0,0,12,16" VerticalAlignment="Center"/>
+        <TextBox x:Name="portOverride" Grid.Row="2" Grid.Column="1" Margin="0,0,0,16"/>
+        <StackPanel Grid.Row="3" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Ok" IsDefault="True" MinWidth="75" Click="Button_Click" Margin="0,0,8,0"/>
+            <Button Content="Cancel" IsCancel="True" MinWidth="75"/>
+        </StackPanel>
     </Grid>
 </Window>

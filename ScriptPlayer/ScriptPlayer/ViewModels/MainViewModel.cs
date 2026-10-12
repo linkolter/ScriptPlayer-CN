@@ -1,4 +1,4 @@
-﻿using FMUtils.KeyboardHook;
+using FMUtils.KeyboardHook;
 using JetBrains.Annotations;
 using ScriptPlayer.Shared;
 using ScriptPlayer.Shared.Classes;
@@ -11,6 +11,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.IO.Ports;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
@@ -54,6 +55,7 @@ namespace ScriptPlayer.ViewModels
         public event EventHandler<RequestEventArgs<TimeSpan>> RequestScriptShiftTimespan;
         public event EventHandler<RequestEventArgs<Section>> RequestSection;
         public event EventHandler<RequestEventArgs<GeneratorSettingsViewModel>> RequestGeneratorSettings;
+        public event EventHandler<RequestEventArgs<string[], string>> RequestScriptVariantSelection;
         
         public event EventHandler RequestActivate;
         public event EventHandler RequestShowDeviceManager;
@@ -65,6 +67,22 @@ namespace ScriptPlayer.ViewModels
         public event EventHandler RequestShowGeneratorProgressDialog;
 
         private readonly string[] _supportedScriptExtensions;
+        private readonly Dictionary<string, string> _scriptVariantSelections =
+            new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
+
+        private static readonly Dictionary<string, string> MultiAxisSuffixes =
+            new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase)
+            {
+                { ".surge", "L1" },
+                { ".sway", "L2" },
+                { ".twist", "R0" },
+                { ".roll", "R1" },
+                { ".pitch", "R2" },
+                { ".vib", "V0" },
+                { ".valve", "A0" },
+                { ".suck", "A1" },
+                { ".lube", "A2" }
+            };
 
         private readonly string[] _supportedVideoExtensions =
             {"mp4", "mpg", "mpeg", "m4v", "avi", "mkv", "mp4v", "mov", "wmv", "asf", "webm", "flv", "m2ts"};
@@ -144,6 +162,11 @@ namespace ScriptPlayer.ViewModels
             }
         }
 
+        public string ThumbnailsMediaPath { get; private set; }
+        private long thumbnailLoadVersion;
+        public TimeSpan? LoopA => _loopA == TimeSpan.MinValue ? (TimeSpan?)null : _loopA;
+        public TimeSpan? LoopB => _loopB == TimeSpan.MinValue ? (TimeSpan?)null : _loopB;
+
         public RepeatablePattern SelectedPattern
         {
             get => _selectedPattern;
@@ -188,7 +211,9 @@ namespace ScriptPlayer.ViewModels
             private set
             {
                 if (value == _loadedMedia) return;
+                Playback.SetMediaIdentity(value);
                 _loadedMedia = value;
+                ExecuteClearLoop();
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(LoadedFiles));
 
@@ -266,10 +291,9 @@ namespace ScriptPlayer.ViewModels
 
         private string _title = "";
         private VideoPlayer _videoPlayer;
+        private MpvVideoPlayer _mpvVideoPlayer;
 
-        private double _volume = 50;
 
-        private bool _wasPlaying;
         private bool _loaded;
 
         private Hook _hook;
@@ -282,6 +306,7 @@ namespace ScriptPlayer.ViewModels
 
         private readonly List<DeviceController> _controllers = new List<DeviceController>();
         private readonly ObservableCollection<IDevice> _devices = new ObservableCollection<IDevice>();
+        private readonly TCodeSerialController _tCodeController = new TCodeSerialController();
         private bool _showBanner = true;
         private string _scriptPlayerVersion;
         private bool _blurVideo;
@@ -331,7 +356,7 @@ namespace ScriptPlayer.ViewModels
         private List<Section> _chapters;
         private TimeSpan _previousProgress = TimeSpan.MinValue;
         private bool _loopSelection;
-        private PlaybackMode _initialPlaybackMode = PlaybackMode.Local;
+        private PlaybackMode _initialPlaybackMode = ScriptPlayer.Shared.Controls.MpvController.IsRuntimeAvailable ? PlaybackMode.Mpv : PlaybackMode.Local;
         private TimeSpan _previousShiftTimeSpan = TimeSpan.FromSeconds(10);
         private GeneratorSettingsViewModel _previousGeneratorSettings;
         private IOnScreenDisplay _mainOsd;
@@ -346,6 +371,12 @@ namespace ScriptPlayer.ViewModels
         private BookmarkFolderViewModel _bookmarks;
 
         public ObservableCollection<IDevice> Devices => _devices;
+
+        public string LoadedTCodeAxes => string.Join(" + ", _tCodeController.LoadedAxes);
+
+        public string TCodeStatus => _tCodeController.IsConnected
+            ? $"TCode / OSR2 / SR6（{_tCodeController.PortName}；{(string.IsNullOrEmpty(LoadedTCodeAxes) ? "未加载脚本" : LoadedTCodeAxes)}）"
+            : "TCode / OSR2 / SR6（未连接）";
 
         public TimeSpan PositionsViewport
         {
@@ -391,6 +422,7 @@ namespace ScriptPlayer.ViewModels
 
         public MainViewModel()
         {
+            Playback.StateChanged += PlaybackStateChanged;
             TimeFrameContext = new TimeFrameContext();
 
             // Can get rather intense even for low values, keep it at 1 for now (Ffmpeg is multi-threaded anyways)
@@ -512,9 +544,15 @@ namespace ScriptPlayer.ViewModels
                 Playlist.RequestMediaFileName += Playlist_RequestMediaFileName;
                 Playlist.RequestVideoFileName += Playlist_RequestVideoFileName;
                 Playlist.RequestScriptFileName += Playlist_RequestScriptFileName;
+                Playlist.RequestScriptFileNames += Playlist_RequestScriptFileNames;
                 Playlist.RequestHeatmapFileName += PlaylistOnRequestHeatmapFileName;
                 Playlist.RequestPreviewFileName += PlaylistOnRequestPreviewFileName;
                 Playlist.RequestAllRelatedFiles += PlaylistOnRequestAllRelatedFiles;
+                Playlist.RenameRelatedFiles = (path, stem) =>
+                {
+                    string[] paths = GetAdditionalPaths();
+                    return Library.RelatedFileRename.Rename(path, stem, paths, GetRenameProtectedFiles(paths));
+                };
 
                 Playlist.RequestRenameFile += PlaylistOnRequestRenameFile;
                 Playlist.RequestDirectory += PlaylistOnRequestDirectory;
@@ -703,6 +741,12 @@ namespace ScriptPlayer.ViewModels
             e.Value = GetScriptFile(e.Value);
         }
 
+        private void Playlist_RequestScriptFileNames(object sender, RequestEventArgs<string, string[]> e)
+        {
+            e.Handled = true;
+            e.ValueOut = GetScriptVariants(e.ValueIn).ToArray();
+        }
+
         private void Playlist_RequestMediaFileName(object sender, RequestEventArgs<string> e)
         {
             e.Handled = true;
@@ -795,7 +839,7 @@ namespace ScriptPlayer.ViewModels
             };
         }
 
-        private void SaveSettings()
+        public void SaveSettings()
         {
             Settings.Save(GetSettingsFilePath());
 
@@ -866,6 +910,21 @@ namespace ScriptPlayer.ViewModels
                     case PlaybackMode.Local:
                         {
                             TimeSource = VideoPlayer.TimeSource;
+                            break;
+                        }
+                    case PlaybackMode.Mpv:
+                        {
+                            if (MpvVideoPlayer == null || !MpvVideoPlayer.IsRuntimeAvailable)
+                            {
+                                OnRequestMessageBox(
+                                    "未找到 libmpv-2.dll，无法启动 MPV 内嵌播放。请确认运行库与 ScriptPlayer.exe 位于同一目录。",
+                                    "MPV 运行库缺失", MessageBoxButton.OK, MessageBoxImage.Warning);
+                                PlaybackMode = PlaybackMode.Local;
+                                return;
+                            }
+
+                            HideBanner();
+                            TimeSource = MpvVideoPlayer.TimeSource;
                             break;
                         }
                     case PlaybackMode.Blind:
@@ -1244,9 +1303,10 @@ namespace ScriptPlayer.ViewModels
 
         private void DisposeTimeSource()
         {
-            TimeSource?.Pause();
+            Playback.Pause(false);
 
-            if (ReferenceEquals(TimeSource, _videoPlayer?.TimeSource))
+            if (ReferenceEquals(TimeSource, _videoPlayer?.TimeSource) ||
+                ReferenceEquals(TimeSource, _mpvVideoPlayer?.TimeSource))
                 return;
 
             if (TimeSource is IDisposable disposable)
@@ -1262,7 +1322,7 @@ namespace ScriptPlayer.ViewModels
 
             if(Settings.WaitForDevicesToLoad)
             {
-                Pause();
+                PauseCore(false);
                 Thread waitForDevices = new Thread(CheckAndWaitForDevices)
                 {
                     Name = "DeviceWaiterThread"
@@ -1365,11 +1425,8 @@ namespace ScriptPlayer.ViewModels
 
             _loaded = true;
             HookUpMediaKeys();
-            CheckForArguments();
-            if (Settings.CheckForNewVersionOnStartup)
-                Version.CheckIfYouHaventAlready();
-
             PlaybackMode = _initialPlaybackMode;
+            CheckForArguments();
 
             AutoStartButtplug();
             AutoConnectButtplug();
@@ -1533,6 +1590,7 @@ namespace ScriptPlayer.ViewModels
                 if (Equals(value, _timeSource)) return;
                 HandleTimeSourceEvents(_timeSource, value);
                 _timeSource = value;
+                AttachPlaybackEngine();
                 TimeSourceChanged();
                 OnPropertyChanged();
             }
@@ -1562,12 +1620,13 @@ namespace ScriptPlayer.ViewModels
             if (CommandSource != CommandSource.Video)
                 return;
 
+            if (RealtimePlayback == null)
             foreach (ISyncBasedDevice device in _devices.OfType<ISyncBasedDevice>())
                 device.Play(playing, TimeSource.Progress);
 
             if (!playing)
             {
-                StopActionBasedDevices();
+                if (RealtimePlayback == null) StopActionBasedDevices();
                 AutoHomeDevices();
 
                 _audioHandler?.Pause();
@@ -1575,6 +1634,7 @@ namespace ScriptPlayer.ViewModels
             else
             {
                 _audioHandler?.Play();
+                if (RealtimePlayback == null) TryUpdateTCode(TimeSource.Progress, true);
             }
         }
 
@@ -1591,7 +1651,7 @@ namespace ScriptPlayer.ViewModels
             if (!TimeSource.IsPlaying || IsSeeking || IsTransistioning)
                 return;
 
-            if (_loopSelection)
+            if (_loopSelection && RealtimePlayback == null)
             {
                 if (_loopA != TimeSpan.MinValue && _loopB != TimeSpan.MinValue)
                 {
@@ -1608,11 +1668,15 @@ namespace ScriptPlayer.ViewModels
 
             if (CommandSource == CommandSource.Video)
             {
+                if (RealtimePlayback == null)
+                {
                 foreach (ISyncBasedDevice device in _devices.OfType<ISyncBasedDevice>())
                 {
                     device.Resync(e);
                 }
 
+                TryUpdateTCode(e, false);
+                }
                 _audioHandler?.Resync(e);
             }
 
@@ -1717,14 +1781,13 @@ namespace ScriptPlayer.ViewModels
 
         public double Volume
         {
-            get => _volume;
+            get => PlaybackState.Volume;
             set
             {
-                if (value.Equals(_volume)) return;
-                _volume = value;
-                if (Settings.NotifyVolume)
+                if (value.Equals(Volume)) return;
+                Playback.SetVolume(value);
+                if (Settings?.NotifyVolume == true)
                     OsdShowMessage($"Volume: {Volume:f0}%", TimeSpan.FromSeconds(4), "Volume");
-                OnPropertyChanged();
             }
         }
 
@@ -1736,6 +1799,18 @@ namespace ScriptPlayer.ViewModels
                 if (Equals(value, _videoPlayer)) return;
                 HandleVideoPlayerEvents(_videoPlayer, value);
                 _videoPlayer = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public MpvVideoPlayer MpvVideoPlayer
+        {
+            get => _mpvVideoPlayer;
+            set
+            {
+                if (Equals(value, _mpvVideoPlayer)) return;
+                HandleMpvVideoPlayerEvents(_mpvVideoPlayer, value);
+                _mpvVideoPlayer = value;
                 OnPropertyChanged();
             }
         }
@@ -1760,6 +1835,7 @@ namespace ScriptPlayer.ViewModels
             {
                 if (value == _commandSource) return;
                 _commandSource = value;
+                RefreshRealtimePlayback();
                 UpdatePattern(_commandSource);
                 OnPropertyChanged();
             }
@@ -1829,6 +1905,7 @@ namespace ScriptPlayer.ViewModels
             {
                 if (value == _loopSelection) return;
                 _loopSelection = value;
+                RefreshRealtimePlayback();
                 OnPropertyChanged();
             }
         }
@@ -1906,6 +1983,7 @@ namespace ScriptPlayer.ViewModels
             if (newValue == null) return;
             newValue.PropertyChanged += Settings_PropertyChanged;
             UpdateAllFromSettings();
+            RefreshRealtimePlayback();
         }
 
         private void UpdateAllFromSettings()
@@ -1964,6 +2042,10 @@ namespace ScriptPlayer.ViewModels
 
         private void Settings_PropertyChanged(object sender, PropertyChangedEventArgs eventArgs)
         {
+            // These new preferences only affect presentation, never a realtime session.
+            if (SettingsViewModel.IsInterfacePreference(eventArgs.PropertyName)
+                || eventArgs.PropertyName == nameof(SettingsViewModel.FfmpegDisplayPath)
+                || eventArgs.PropertyName == nameof(SettingsViewModel.PrivateSettingsStatus)) return;
             switch (eventArgs.PropertyName)
             {
                 case nameof(SettingsViewModel.ShowFilledGapsInHeatMap):
@@ -2098,6 +2180,7 @@ namespace ScriptPlayer.ViewModels
                     break;
                 }
             }
+            RefreshRealtimePlayback();
         }
 
         private void ReloadSubtitles()
@@ -2234,12 +2317,19 @@ namespace ScriptPlayer.ViewModels
 
         public void Dispose()
         {
+            thumbnailLoadVersion++;
+            DisposeRealtimePlayback();
+            Playback.Pause(false);
+            Playback.StateChanged -= PlaybackStateChanged;
+            Playback.Dispose();
             WorkQueue.Dispose();
 
             Playlist.Dispose();
 
             _videoPlayer?.TimeSource.Pause();
             _videoPlayer?.Dispose();
+            _mpvVideoPlayer?.TimeSource.Pause();
+            _mpvVideoPlayer?.Dispose();
 
             StopPattern();
 
@@ -2256,6 +2346,8 @@ namespace ScriptPlayer.ViewModels
             }
 
             _devices.Clear();
+
+            _tCodeController.Dispose();
 
             DisposeTimeSource();
         }
@@ -2286,6 +2378,21 @@ namespace ScriptPlayer.ViewModels
                 newValue.MediaEnded += VideoPlayer_MediaEnded;
 
                 TimeSource = newValue.TimeSource;
+            }
+        }
+
+        private void HandleMpvVideoPlayerEvents(MpvVideoPlayer oldValue, MpvVideoPlayer newValue)
+        {
+            if (oldValue != null)
+            {
+                oldValue.MediaOpened -= VideoPlayer_MediaOpened;
+                oldValue.MediaEnded -= VideoPlayer_MediaEnded;
+            }
+
+            if (newValue != null)
+            {
+                newValue.MediaOpened += VideoPlayer_MediaOpened;
+                newValue.MediaEnded += VideoPlayer_MediaEnded;
             }
         }
 
@@ -2334,7 +2441,7 @@ namespace ScriptPlayer.ViewModels
         {
             if (EntryLoaded())
             {
-                TimeSource.Play();
+                Playback.Play();
                 if (Settings.NotifyPlayPause)
                     OsdShowMessage("Play", TimeSpan.FromSeconds(2), "Playback");
             }
@@ -2346,7 +2453,7 @@ namespace ScriptPlayer.ViewModels
 
         private bool EntryLoaded()
         {
-            if (PlaybackMode != PlaybackMode.Local)
+            if (PlaybackMode != PlaybackMode.Local && PlaybackMode != PlaybackMode.Mpv)
                 return !string.IsNullOrWhiteSpace(LoadedScript);
 
             return !string.IsNullOrWhiteSpace(LoadedMedia);
@@ -2354,20 +2461,23 @@ namespace ScriptPlayer.ViewModels
 
         public void TogglePlayback()
         {
-            if (!TimeSource.CanPlayPause)
+            if (TimeSource == null || !TimeSource.CanPlayPause)
                 return;
 
-            if (TimeSource.IsPlaying)
-                Pause();
-            else
-                Play();
+            if (!EntryLoaded()) { Play(); return; }
+            Playback.Toggle();
+            if (Settings.NotifyPlayPause)
+                OsdShowMessage(PlaybackState.IsPlaying ? "Play" : "Pause", TimeSpan.FromSeconds(2), "Playback");
         }
 
-        private void Pause()
+        // Only a deliberate pause can qualify for the separate exit bookmark.
+        private void Pause() => PauseCore(true);
+
+        private void PauseCore(bool userInitiated)
         {
             if (EntryLoaded())
             {
-                TimeSource.Pause();
+                Playback.Pause(userInitiated);
                 
                 if (Settings.NotifyPlayPause)
                     OsdShowMessage("Pause", TimeSpan.FromSeconds(2), "Playback");
@@ -2403,10 +2513,13 @@ namespace ScriptPlayer.ViewModels
 
         private void TryFindMatchingThumbnails(string videoFileName, bool generateIfMissing)
         {
+            long request = ++thumbnailLoadVersion;
+            ThumbnailsMediaPath = null;
+            Thumbnails = null;
+            OnPropertyChanged(nameof(ThumbnailsMediaPath));
             if (string.IsNullOrEmpty(videoFileName))
                 return;
 
-            Thumbnails = null;
             string thumbnailFile = FileFinder.FindFile(videoFileName, new[] { "thumbs" }, GetAdditionalPaths());
 
             if (string.IsNullOrWhiteSpace(thumbnailFile))
@@ -2416,18 +2529,28 @@ namespace ScriptPlayer.ViewModels
                 return;
             }
 
-            LoadThumbnails(thumbnailFile);
+            LoadThumbnails(thumbnailFile, videoFileName, request);
         }
 
-        private void LoadThumbnails(string thumbnailFile)
+        private async void LoadThumbnails(string thumbnailFile, string mediaFile, long request)
         {
             try
             {
-                VideoThumbnailCollection thumbnails = new VideoThumbnailCollection();
-                using (FileStream stream = new FileStream(thumbnailFile, FileMode.Open, FileAccess.Read))
-                    thumbnails.Load(stream);
-
+                VideoThumbnailCollection thumbnails = await Task.Run(() =>
+                {
+                    var result = new VideoThumbnailCollection();
+                    try
+                    {
+                        using (FileStream stream = new FileStream(thumbnailFile, FileMode.Open, FileAccess.Read)) result.Load(stream);
+                        return result;
+                    }
+                    catch { result.Dispose(); throw; }
+                });
+                if (request != thumbnailLoadVersion || !string.Equals(LoadedMedia, mediaFile, StringComparison.OrdinalIgnoreCase))
+                { thumbnails.Dispose(); return; }
+                ThumbnailsMediaPath = mediaFile;
                 Thumbnails = thumbnails;
+                OnPropertyChanged(nameof(ThumbnailsMediaPath));
             }
             catch (Exception ex)
             {
@@ -2446,8 +2569,8 @@ namespace ScriptPlayer.ViewModels
 
             ClearScriptForSyncDevices();
 
-            string scriptFile = FileFinder.FindFile(videoFileName, GetScriptExtensions(), GetAdditionalPaths());
-            if (string.IsNullOrWhiteSpace(scriptFile))
+            List<string> scriptVariants = GetScriptVariants(videoFileName);
+            if (scriptVariants.Count == 0)
             {
                 if (Settings.NotifyFileLoaded)
                     OsdShowMessage($"No script for '{Path.GetFileName(videoFileName)}' found!", TimeSpan.FromSeconds(6));
@@ -2456,7 +2579,172 @@ namespace ScriptPlayer.ViewModels
                 return;
             }
 
+            string scriptFile;
+            if (scriptVariants.Count == 1)
+            {
+                scriptFile = scriptVariants[0];
+            }
+            else
+            {
+                string previousSelection;
+                _scriptVariantSelections.TryGetValue(videoFileName, out previousSelection);
+                scriptFile = OnRequestScriptVariantSelection(scriptVariants.ToArray(), previousSelection);
+                if (string.IsNullOrWhiteSpace(scriptFile))
+                {
+                    ClearScriptForSyncDevices();
+                    return;
+                }
+            }
+
+            _scriptVariantSelections[videoFileName] = scriptFile;
+            SetPlaylistSelectedScript(videoFileName, scriptFile);
+
             LoadScriptOrFallback(scriptFile, false);
+        }
+
+        public List<string> GetScriptVariants(string videoFileName)
+        {
+            List<string> result = new List<string>();
+            if (string.IsNullOrWhiteSpace(videoFileName))
+                return result;
+
+            string videoBaseName = Path.GetFileNameWithoutExtension(videoFileName);
+            string videoFileNameOnly = Path.GetFileName(videoFileName);
+            HashSet<string> supportedExtensions = new HashSet<string>(GetScriptExtensions(), StringComparer.InvariantCultureIgnoreCase);
+
+            List<string> paths = GetAdditionalPaths().Where(Directory.Exists).ToList();
+            string currentPath = Path.GetDirectoryName(videoFileName);
+            if (!string.IsNullOrWhiteSpace(currentPath) && Directory.Exists(currentPath) &&
+                !paths.Contains(currentPath, StringComparer.InvariantCultureIgnoreCase))
+                paths.Insert(0, currentPath);
+
+            foreach (string path in paths.Distinct(StringComparer.InvariantCultureIgnoreCase))
+            {
+                try
+                {
+                    foreach (string file in Directory.EnumerateFiles(path, videoBaseName + "*.*", SearchOption.TopDirectoryOnly))
+                    {
+                        string extension = Path.GetExtension(file).TrimStart('.');
+                        if (!supportedExtensions.Contains(extension))
+                            continue;
+                        if (IsMultiAxisCompanion(file))
+                            continue;
+
+                        string scriptBaseName = Path.GetFileNameWithoutExtension(file);
+                        bool exact = InvariantEquals(scriptBaseName, videoBaseName) ||
+                                     InvariantEquals(scriptBaseName, videoFileNameOnly);
+                        bool variant = scriptBaseName.StartsWith(videoBaseName + "-", StringComparison.InvariantCultureIgnoreCase) ||
+                                       scriptBaseName.StartsWith(videoBaseName + "_", StringComparison.InvariantCultureIgnoreCase);
+                        if (exact || variant)
+                            result.Add(file);
+                    }
+                }
+                catch (IOException) { }
+                catch (UnauthorizedAccessException) { }
+            }
+
+            string[] extensionPreference = GetScriptExtensions();
+            return result
+                .Distinct(StringComparer.InvariantCultureIgnoreCase)
+                .OrderBy(file => IsExactScriptVariant(file, videoBaseName, videoFileNameOnly) ? 0 : 1)
+                .ThenBy(file => Array.IndexOf(extensionPreference, Path.GetExtension(file).TrimStart('.')))
+                .ThenBy(file => Path.GetFileName(file), StringComparer.InvariantCultureIgnoreCase)
+                .ToList();
+        }
+
+        private static bool IsExactScriptVariant(string file, string videoBaseName, string videoFileNameOnly)
+        {
+            string scriptBaseName = Path.GetFileNameWithoutExtension(file);
+            return InvariantEquals(scriptBaseName, videoBaseName) || InvariantEquals(scriptBaseName, videoFileNameOnly);
+        }
+
+        private static bool IsMultiAxisCompanion(string file)
+        {
+            if (!string.Equals(Path.GetExtension(file), ".funscript", StringComparison.InvariantCultureIgnoreCase))
+                return false;
+
+            string scriptBaseName = Path.GetFileNameWithoutExtension(file);
+            return MultiAxisSuffixes.Keys.Any(suffix =>
+                scriptBaseName.EndsWith(suffix, StringComparison.InvariantCultureIgnoreCase));
+        }
+
+        private void LoadTCodeScripts(string mainScriptFile)
+        {
+            Dictionary<string, IEnumerable<FunScriptAction>> scripts =
+                new Dictionary<string, IEnumerable<FunScriptAction>>(StringComparer.InvariantCultureIgnoreCase)
+                {
+                    { "L0", _scriptHandler.GetUnfilledScript().ToList() }
+                };
+
+            if (string.Equals(Path.GetExtension(mainScriptFile), ".funscript",
+                StringComparison.InvariantCultureIgnoreCase))
+            {
+                try
+                {
+                    FunScriptLoader loader = new FunScriptLoader();
+                    foreach (KeyValuePair<string, List<FunScriptAction>> embedded in loader.LoadMultiAxis(mainScriptFile))
+                        scripts[embedded.Key] = embedded.Value;
+                }
+                catch (Exception error)
+                {
+                    Debug.WriteLine("Unable to load embedded multi-axis script: " + error.Message);
+                }
+
+                string rootName = Path.GetFileNameWithoutExtension(mainScriptFile);
+                List<string> directories = new List<string>();
+                string mainDirectory = Path.GetDirectoryName(mainScriptFile);
+                if (!string.IsNullOrWhiteSpace(mainDirectory))
+                    directories.Add(mainDirectory);
+                directories.AddRange(GetAdditionalPaths().Where(Directory.Exists));
+
+                FunScriptLoader companionLoader = new FunScriptLoader();
+                foreach (KeyValuePair<string, string> axis in MultiAxisSuffixes)
+                {
+                    string companionName = rootName + axis.Key + ".funscript";
+                    string companion = directories
+                        .Distinct(StringComparer.InvariantCultureIgnoreCase)
+                        .Select(directory => Path.Combine(directory, companionName))
+                        .FirstOrDefault(File.Exists);
+                    if (string.IsNullOrWhiteSpace(companion))
+                        continue;
+
+                    try
+                    {
+                        List<FunScriptAction> actions = companionLoader.Load(companion, new FunScriptMetaData())
+                            .OfType<FunScriptAction>()
+                            .OrderBy(action => action.TimeStamp)
+                            .ToList();
+                        if (actions.Count > 0)
+                            scripts[axis.Value] = actions;
+                    }
+                    catch (Exception error)
+                    {
+                        Debug.WriteLine("Unable to load multi-axis companion " + companion + ": " + error.Message);
+                    }
+                }
+            }
+
+            _tCodeController.SetScripts(scripts);
+            RefreshTCodeStatus();
+        }
+
+        private void SetPlaylistSelectedScript(string videoFileName, string scriptFile)
+        {
+            PlaylistEntry entry = Playlist.Entries.FirstOrDefault(item =>
+            {
+                string media = GetMediaFile(item.Fullname);
+                return string.Equals(media, videoFileName, StringComparison.InvariantCultureIgnoreCase) ||
+                       string.Equals(item.Fullname, videoFileName, StringComparison.InvariantCultureIgnoreCase);
+            });
+            if (entry != null)
+                entry.SelectedScriptName = Path.GetFileName(scriptFile);
+        }
+
+        private string OnRequestScriptVariantSelection(string[] variants, string previousSelection)
+        {
+            RequestEventArgs<string[], string> eventArgs = new RequestEventArgs<string[], string>(variants, previousSelection);
+            RequestScriptVariantSelection?.Invoke(this, eventArgs);
+            return eventArgs.Handled ? eventArgs.ValueOut : variants.FirstOrDefault();
         }
 
         private string[] GetScriptExtensions()
@@ -2501,6 +2789,20 @@ namespace ScriptPlayer.ViewModels
             }
 
             return result.ToArray();
+        }
+
+        private IEnumerable<string> GetRenameProtectedFiles(IEnumerable<string> additionalPaths)
+        {
+            foreach (string file in LoadedFiles) yield return file;
+            if (string.IsNullOrWhiteSpace(LoadedScript) || !string.Equals(Path.GetExtension(LoadedScript), ".funscript", StringComparison.OrdinalIgnoreCase))
+                yield break;
+            // Conservative rename guard, not a change to axis loading/output: protect companion
+            // candidates in every configured search directory, including secondary copies.
+            string stem = Path.GetFileNameWithoutExtension(LoadedScript);
+            var directories = new[] { Path.GetDirectoryName(LoadedScript) }.Concat(additionalPaths);
+            foreach (string directory in directories.Where(p => !string.IsNullOrWhiteSpace(p)).Distinct(StringComparer.OrdinalIgnoreCase))
+                foreach (string suffix in MultiAxisSuffixes.Keys)
+                    yield return Path.Combine(directory, stem + suffix + ".funscript");
         }
 
         private List<string> ExpandPath(string path)
@@ -2609,7 +2911,11 @@ namespace ScriptPlayer.ViewModels
 
         public string GetScriptFile(string filename)
         {
-            return GetRelatedFile(filename, GetScriptExtensions(), GetMediaExtensions());
+            string extension = Path.GetExtension(filename).TrimStart('.');
+            if (GetScriptExtensions().Contains(extension, StringComparer.InvariantCultureIgnoreCase))
+                return filename;
+
+            return GetScriptVariants(filename).FirstOrDefault();
         }
 
         private bool IsMatchingScriptLoaded(string videoFileName)
@@ -2811,12 +3117,12 @@ namespace ScriptPlayer.ViewModels
             Playlist.MoveEntriesToNewDirectory(new List<PlaylistEntry>{currentEntry}, newDir, removeFromPlaylist, playNext);
         }
 
-        private void EditMetadata()
+        private async void EditMetadata()
         {
             string previousScript = LoadedScript;
 
             EditMetaDataDialog dialog = new EditMetaDataDialog(_scriptHandler.MetaData);
-            if (dialog.ShowDialog() != true)
+            if (await InlineDialogService.ShowAsync(dialog) != true)
                 return;
 
             if (previousScript == LoadedScript)
@@ -2898,17 +3204,110 @@ namespace ScriptPlayer.ViewModels
             OsdShowMessage("Max Speed: " + Settings.MaxSpeed, TimeSpan.FromSeconds(2), "MaxSpeed");
         }
 
-       private void AddEstimAudioDevice()
+       private async void AddEstimAudioDevice()
         {
             var controller = _controllers.OfType<EStimAudioController>().FirstOrDefault();
 
             var devices = controller.GetAudioDevices();
             AudioDeviceSelector dialog = new AudioDeviceSelector(devices);
 
-            if(dialog.ShowDialog() != true)
+            if(await InlineDialogService.ShowAsync(dialog) != true)
                 return;
 
             controller.SetDevice(dialog.SelectedDevice, dialog.Parameters);
+        }
+
+        private async void ConnectTCodeWifiDevice()
+        {
+            var dialog = new TCodeWifiDialog(async endpoint =>
+            {
+                try
+                {
+                    await Task.Run(() => _tCodeController.Connect(endpoint));
+                    if (TimeSource?.IsPlaying == true)
+                        TryUpdateTCode(TimeSource.Progress, true);
+                    if (!_tCodeController.IsConnected)
+                        throw new IOException("UDP 发送失败，连接已关闭。");
+                }
+                finally
+                {
+                    RefreshTCodeStatus();
+                }
+            }, DisconnectTCodeDevice)
+            {
+                Owner = Application.Current.MainWindow
+            };
+            await InlineDialogService.ShowAsync(dialog);
+        }
+
+        private async void ConnectTCodeDevice()
+        {
+            string[] ports = SerialPort.GetPortNames()
+                .OrderBy(port => port, StringComparer.InvariantCultureIgnoreCase)
+                .ToArray();
+
+            if (ports.Length == 0)
+            {
+                OnRequestMessageBox("没有检测到可用串口。请先连接并开启 OSR2 / SR6，再重试。",
+                    "TCode 设备", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            SerialPortSelector dialog = new SerialPortSelector(ports, Settings.TCodePortName)
+            {
+                Title = "选择 TCode / OSR2 / SR6 串口"
+            };
+            if (await InlineDialogService.ShowAsync(dialog) != true)
+                return;
+
+            try
+            {
+                _tCodeController.Connect(dialog.SelectedPort);
+                Settings.TCodePortName = dialog.SelectedPort;
+                RefreshTCodeStatus();
+                if (TimeSource?.IsPlaying == true)
+                    TryUpdateTCode(TimeSource.Progress, true);
+                OsdShowMessage($"TCode 已连接：{dialog.SelectedPort}（115200）",
+                    TimeSpan.FromSeconds(4), "TCodeConnected");
+            }
+            catch (Exception error)
+            {
+                RefreshTCodeStatus();
+                OnRequestMessageBox($"无法连接 {dialog.SelectedPort}。\n\n{error.Message}",
+                    "TCode 连接失败", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void DisconnectTCodeDevice()
+        {
+            string port = _tCodeController.PortName;
+            _tCodeController.Disconnect();
+            RefreshTCodeStatus();
+            if (!string.IsNullOrWhiteSpace(port))
+                OsdShowMessage($"TCode 已断开：{port}", TimeSpan.FromSeconds(3), "TCodeDisconnected");
+        }
+
+        private void RefreshTCodeStatus()
+        {
+            OnPropertyChanged(nameof(LoadedTCodeAxes));
+            OnPropertyChanged(nameof(TCodeStatus));
+        }
+
+        private void TryUpdateTCode(TimeSpan progress, bool force)
+        {
+            if (CommandSource != CommandSource.Video)
+                return;
+
+            try
+            {
+                _tCodeController.Update(progress, Settings?.ScriptDelay ?? TimeSpan.Zero, force);
+            }
+            catch (Exception error)
+            {
+                RefreshTCodeStatus();
+                OsdShowMessage("TCode 连接已断开：" + error.Message,
+                    TimeSpan.FromSeconds(6), "TCodeDisconnected");
+            }
         }
 
         /// <summary>
@@ -2960,14 +3359,14 @@ namespace ScriptPlayer.ViewModels
         }
 
 
-        private void AddFunstimAudioDevice()
+        private async void AddFunstimAudioDevice()
         {
             var controller = _controllers.OfType<FunstimAudioController>().FirstOrDefault();
 
             var devices = controller.GetAudioDevices();
             FunstimDeviceSelector dialog = new FunstimDeviceSelector(devices);
 
-            if (dialog.ShowDialog() != true)
+            if (await InlineDialogService.ShowAsync(dialog) != true)
                 return;
 
             controller.SetDevice(dialog.SelectedDevice, new FunstimParameters() {
@@ -3050,9 +3449,11 @@ namespace ScriptPlayer.ViewModels
             PrintRange();
         }
 
-        private void ShiftScript()
+        private async void ShiftScript()
         {
-            TimeSpan timeSpan = OnRequestScriptShiftTimespan(_previousShiftTimeSpan);
+            var dialog = new TimeShiftDialog(_previousShiftTimeSpan);
+            if (await InlineDialogService.ShowAsync(dialog) != true) return;
+            TimeSpan timeSpan = dialog.Result;
             if (timeSpan == TimeSpan.Zero)
                 return;
 
@@ -3061,7 +3462,7 @@ namespace ScriptPlayer.ViewModels
             RefreshChapters();
         }
 
-        private void TrimScript()
+        private async void TrimScript()
         {
             Section initialValue = DisplayedRange;
 
@@ -3070,7 +3471,9 @@ namespace ScriptPlayer.ViewModels
                 initialValue = new Section(TimeSpan.Zero, TimeSource.Duration);
             }
 
-            var section = OnRequestSection(initialValue);
+            var dialog = new SectionDialog { TimeFrom=initialValue.Start, TimeTo=initialValue.End };
+            if (await InlineDialogService.ShowAsync(dialog) != true) return;
+            var section = new Section(dialog.TimeFrom, dialog.TimeTo);
             if (section == null)
                 return;
 
@@ -3171,7 +3574,7 @@ namespace ScriptPlayer.ViewModels
         {
             double currentValue = Math.Round(TimeSource.PlaybackRate, 1);
             if (currentValue > 0.1)
-                TimeSource.PlaybackRate = currentValue - 0.1;
+                Playback.SetRate(currentValue - 0.1);
 
             OsdShowMessage("Playback Rate: " + TimeSource.PlaybackRate.ToString("F1", CultureInfo.InvariantCulture), TimeSpan.FromSeconds(2), "PlaybackRate");
         }
@@ -3180,7 +3583,7 @@ namespace ScriptPlayer.ViewModels
         {
             double currentValue = Math.Round(TimeSource.PlaybackRate, 1);
             if (currentValue < 2.0)
-                TimeSource.PlaybackRate = currentValue + 0.1;
+                Playback.SetRate(currentValue + 0.1);
 
             OsdShowMessage("Playback Rate: x" + TimeSource.PlaybackRate.ToString("F1"), TimeSpan.FromSeconds(2), "PlaybackRate");
         }
@@ -3226,6 +3629,9 @@ namespace ScriptPlayer.ViewModels
 
         private void UpdateDisplayedSelection()
         {
+            RefreshRealtimePlayback();
+            OnPropertyChanged(nameof(LoopA));
+            OnPropertyChanged(nameof(LoopB));
             if (_loopA != TimeSpan.MinValue && _loopB != TimeSpan.MinValue)
                 DisplayedRange = new Section(_loopA, _loopB);
             else
@@ -3378,13 +3784,19 @@ namespace ScriptPlayer.ViewModels
         private void RemoveDevice(IDevice device)
         {
             // ReSharper disable once AccessToDisposedClosure
-            if (ShouldInvokeInstead(() => RemoveDevice(device))) return;
+            if (!Application.Current.Dispatcher.CheckAccess())
+            {
+                Application.Current.Dispatcher.BeginInvoke(new Action(() => RemoveDevice(device)));
+                return;
+            }
 
             if (!_devices.Contains(device))
                 return;
 
             if (device is ISyncBasedDevice sync)
                 sync.ScriptLoaded -= Device_ScriptLoaded;
+
+            RealtimePlayback?.Dispose(); RealtimePlayback = null;
 
             if (device is Device dev)
             {
@@ -3393,6 +3805,7 @@ namespace ScriptPlayer.ViewModels
             }
 
             _devices.Remove(device);
+            AttachRealtimePlayback();
 
             if (Settings.NotifyDevices)
                 OsdShowMessage("Device Removed: " + device.Name, TimeSpan.FromSeconds(8));
@@ -3432,6 +3845,7 @@ namespace ScriptPlayer.ViewModels
 
             if (Settings.NotifyDevices)
                 OsdShowMessage("Device Connected: " + device.Name, TimeSpan.FromSeconds(8));
+            AttachRealtimePlayback();
         }
 
         private void Device_ScriptLoaded(object sender, EventArgs e)
@@ -3470,25 +3884,8 @@ namespace ScriptPlayer.ViewModels
 
         public void Seek(TimeSpan absolute, int downmoveup)
         {
-            switch (downmoveup)
-            {
-                case 0:
-                    _wasPlaying = TimeSource.IsPlaying;
-                    TimeSource.Pause();
-                    TimeSource.SetPosition(absolute);
-                    ShowPosition();
-                    break;
-                case 1:
-                    TimeSource.SetPosition(absolute);
-                    ShowPosition();
-                    break;
-                case 2:
-                    TimeSource.SetPosition(absolute);
-                    if (_wasPlaying)
-                        TimeSource.Play();
-                    ShowPosition();
-                    break;
-            }
+            Playback.Seek(absolute, downmoveup);
+            ShowPosition();
         }
 
         //private void InitializeLaunchFinder()
@@ -3624,6 +4021,7 @@ namespace ScriptPlayer.ViewModels
             try
             {
                 _loading = true;
+                RefreshRealtimePlayback();
 
                 if (checkForScript)
                     TryFindMatchingScript(mediaFileName);
@@ -3654,14 +4052,11 @@ namespace ScriptPlayer.ViewModels
                     start = GetFirstEvent();
                 }
 
-                if (PlaybackMode == PlaybackMode.Local)
+                if (PlaybackMode == PlaybackMode.Local || PlaybackMode == PlaybackMode.Mpv)
                 {
                     HideBanner();
-                    Task openVideo = VideoPlayer.Open(mediaFileName, start, Settings.SoftSeekFiles ? Settings.SoftSeekFilesDuration : TimeSpan.Zero);
-
-                    Thread waitForDevices = new Thread(CheckAndWaitForDevices);
-                    waitForDevices.Name = "DeviceWaiterThread";
-                    waitForDevices.Start(openVideo);
+                    Task openVideo = Playback.OpenAsync(mediaFileName, start);
+                    ObservePlaybackOpen(openVideo, PlaybackState.SessionId);
                 }
                 
                 Title = Path.GetFileNameWithoutExtension(mediaFileName);
@@ -3677,13 +4072,20 @@ namespace ScriptPlayer.ViewModels
             finally
             {
                 _loading = false;
+                RefreshRealtimePlayback();
             }
         }
 
         private async void CheckAndWaitForDevices(object obj)
         {
             Task task = (Task) obj;
-            await task;
+            try { await task; }
+            catch (OperationCanceledException) { return; }
+            catch (Exception error)
+            {
+                ExecuteOrInvoke(() => OsdShowMessage("无法打开媒体：" + error.Message, TimeSpan.FromSeconds(5), "MediaOpenError"));
+                return;
+            }
             Debug.WriteLine("Video loaded, waiting for devices");
 
             ExecuteOrInvoke(CheckDevices);
@@ -3713,7 +4115,7 @@ namespace ScriptPlayer.ViewModels
                 }
 
                 _playWhenDevicesAreReady = true;
-                Pause();
+                PauseCore(false);
             }
             else
             {
@@ -3882,6 +4284,7 @@ namespace ScriptPlayer.ViewModels
 
             _minScriptPosition = minPos;
             _maxScriptPosition = maxPos;
+            RefreshRealtimePlayback();
         }
 
         private void UpdateHeatMap()
@@ -3998,6 +4401,7 @@ namespace ScriptPlayer.ViewModels
         private void ScriptHandlerOnPositionsChanged(object sender, PositionCollection positionCollection)
         {
             Positions = positionCollection;
+            FindMaxPositions();
         }
 
         private void ScriptHandlerOnIntermediateScriptActionRaised(object sender, IntermediateScriptActionEventArgs eventArgs)
@@ -4327,6 +4731,13 @@ namespace ScriptPlayer.ViewModels
 
         private void SetDevices(DeviceCommandInformation information, bool requirePlaying = true)
         {
+            if (requirePlaying && CommandSource == CommandSource.Video && RealtimePlayback != null) return;
+            if (!requirePlaying && CommandSource == CommandSource.Video && RealtimePlayback != null && !TimeSource.IsPlaying)
+            {
+                CurrentPosition = information.PositionFromTransformed / 99.0;
+                RealtimePlayback.SendPausedCommand(information);
+                return;
+            }
             if (!TimeSource.IsPlaying && requirePlaying) return;
 
             CurrentPosition = information.PositionFromTransformed / 99.0;
@@ -4337,6 +4748,7 @@ namespace ScriptPlayer.ViewModels
 
         private void SetDevices(IntermediateCommandInformation intermediateInfo, bool requirePlaying = true)
         {
+            if (requirePlaying && CommandSource == CommandSource.Video && RealtimePlayback != null) return;
             //TODO Handle this better!
             // (Hush is too slow)
 
@@ -4766,10 +5178,7 @@ namespace ScriptPlayer.ViewModels
         {
             TimeSpan from = TimeSource.Progress;
 
-            if (PlaybackMode == PlaybackMode.Local && softSeek)
-                VideoPlayer.SoftSeek(position, duration);
-            else
-                TimeSource.SetPosition(position);
+            Playback.SeekTo(position, PlaybackMode == PlaybackMode.Local && softSeek ? duration : TimeSpan.Zero);
 
             if (Settings.NotifyGaps)
                 ShowPosition($"Skipped {(position - from).TotalSeconds:f0}s - ");
@@ -5039,6 +5448,10 @@ namespace ScriptPlayer.ViewModels
 
             if (actions == null) return false;
 
+            realtimeScriptUpdating = true;
+            RefreshRealtimePlayback();
+            try
+            {
             _scriptHandler.SetScript(actions, isFallback, metaData);
 
             RefreshChapters();
@@ -5049,8 +5462,11 @@ namespace ScriptPlayer.ViewModels
             UpdateHeatMap();
 
             SetScriptForSyncDevices(Path.GetFileNameWithoutExtension(LoadedScript), _scriptHandler.GetScript().ToList());
+            LoadTCodeScripts(fileName);
 
             return true;
+            }
+            finally { realtimeScriptUpdating = false; RefreshRealtimePlayback(); }
         }
 
         private void ClearScriptForSyncDevices()
@@ -5059,6 +5475,9 @@ namespace ScriptPlayer.ViewModels
             {
                 device.ClearScript();
             }
+
+            _tCodeController.ClearScripts();
+            RefreshTCodeStatus();
         }
 
         private void SetScriptForSyncDevices(string title, List<FunScriptAction> script)
@@ -5129,7 +5548,7 @@ namespace ScriptPlayer.ViewModels
 
         public void ShiftPosition(TimeSpan timeSpan)
         {
-            TimeSource.SetPosition(TimeSource.Progress + timeSpan);
+            Playback.SeekTo(TimeSource.Progress + timeSpan, TimeSpan.Zero);
             ShowPosition();
         }
 
@@ -5528,7 +5947,7 @@ namespace ScriptPlayer.ViewModels
             GenerateAll(true, LoadedMedia);
         }
 
-        private void GenerateThumbnails(bool askUserForSettings, bool showProgressDialog, params string[] videos)
+        private async void GenerateThumbnails(bool askUserForSettings, bool showProgressDialog, params string[] videos)
         {
             if (!CheckFfmpeg(askUserForSettings))
                 return;
@@ -5537,7 +5956,8 @@ namespace ScriptPlayer.ViewModels
 
             if (askUserForSettings)
             {
-                settings = OnRequestThumbnailGeneratorSettings(settings);
+                var editor = new ThumbnailGeneratorSettingsDialog(this, settings);
+                settings = await InlineDialogService.ShowAsync(editor) == true ? editor.Result : null;
             }
             else if (settings == null)
             {
@@ -5570,13 +5990,14 @@ namespace ScriptPlayer.ViewModels
                 AutoShowGeneratorProgress();
         }
 
-        private void GenerateThumbnailBanners(params string[] videos)
+        private async void GenerateThumbnailBanners(params string[] videos)
         {
             if (!CheckFfmpeg())
                 return;
 
             ThumbnailBannerGeneratorSettings settings = _lastThumbnailBannerSettings?.Duplicate();
-            settings = OnRequestThumbnailBannerGeneratorSettings(settings);
+            var editor = new ThumbnailBannerGeneratorSettingsDialog(settings);
+                settings = await InlineDialogService.ShowAsync(editor) == true ? editor.Settings : null;
 
             if (settings == null)
                 return;
@@ -5717,7 +6138,7 @@ namespace ScriptPlayer.ViewModels
             AutoShowGeneratorProgress();
         }
 
-        private void GeneratePreviews(bool currentlyLoaded, params string[] videos)
+        private async void GeneratePreviews(bool currentlyLoaded, params string[] videos)
         {
             if (!CheckFfmpeg())
                 return;
@@ -5743,7 +6164,8 @@ namespace ScriptPlayer.ViewModels
                 }
             }
 
-            settings = OnRequestPreviewGeneratorSettings(settings);
+            var editor = new PreviewGeneratorSettingsDialog(settings);
+                settings = await InlineDialogService.ShowAsync(editor) == true ? editor.Result : null;
 
             if (settings == null)
                 return;
@@ -5772,9 +6194,10 @@ namespace ScriptPlayer.ViewModels
             AutoShowGeneratorProgress();
         }
 
-        public void ModifyGeneratorSettings()
+        public async void ModifyGeneratorSettings()
         {
-            var generatorSettings = OnRequestGeneratorSettings(_previousGeneratorSettings);
+            var dialog = new GeneratorSettingsDialog(this, _previousGeneratorSettings?.Duplicate(), GeneratedElements.All, GeneratedElements.Thumbnails);
+            var generatorSettings = await InlineDialogService.ShowAsync(dialog) == true ? dialog.Settings : null;
             if (generatorSettings == null)
                 return;
 
@@ -5900,8 +6323,8 @@ namespace ScriptPlayer.ViewModels
 
             var response =
                 OnRequestMessageBox(
-                    "You need to configure FFmpeg before you can generate thumbnails and gifs. Would you like to open the settings now?",
-                    "FFmpeg.exe not found", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                    "未找到 FFmpeg，因此暂时无法生成缩略图和 GIF 预览。是否现在打开设置？",
+                    "未找到 FFmpeg.exe", MessageBoxButton.YesNo, MessageBoxImage.Question);
 
             if (response != MessageBoxResult.Yes)
                 return false;
@@ -5975,7 +6398,11 @@ namespace ScriptPlayer.ViewModels
 
             string commonFileName = Path.GetFileNameWithoutExtension(filePath);
 
-            List<string> allFilePaths = paths.SelectMany(path => Directory.EnumerateFiles(path, commonFileName + ".*", SearchOption.TopDirectoryOnly)).ToList();
+            List<string> allFilePaths = paths.SelectMany(path =>
+                Directory.EnumerateFiles(path, commonFileName + ".*", SearchOption.TopDirectoryOnly)
+                    .Concat(Directory.EnumerateFiles(path, commonFileName + "-*.*", SearchOption.TopDirectoryOnly))
+                    .Concat(Directory.EnumerateFiles(path, commonFileName + "_*.*", SearchOption.TopDirectoryOnly)))
+                .ToList();
             if (!filterDuplicates)
                 return allFilePaths;
 

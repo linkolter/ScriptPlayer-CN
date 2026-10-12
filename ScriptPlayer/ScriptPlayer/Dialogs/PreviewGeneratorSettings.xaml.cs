@@ -214,12 +214,12 @@ namespace ScriptPlayer.Dialogs
                 });
             }
 
-            DialogResult = true;
+            InlineDialogService.Complete(this, true);
         }
 
         private void BtnCancel_Click(object sender, RoutedEventArgs e)
         {
-            DialogResult = false;
+            InlineDialogService.Complete(this, false);
         }
     }
 }

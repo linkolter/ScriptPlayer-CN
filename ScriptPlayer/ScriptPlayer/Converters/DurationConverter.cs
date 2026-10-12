@@ -9,10 +9,16 @@ namespace ScriptPlayer.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is TimeSpan)
-                return ((TimeSpan) value).ToString(@"h\:mm\:ss");
+            if (value is TimeSpan duration)
+            {
+                if (duration <= TimeSpan.Zero)
+                    return "读取中…";
 
-            return "-";
+                int hours = duration.Days * 24 + duration.Hours;
+                return $"{hours:0}:{duration.Minutes:00}:{duration.Seconds:00}";
+            }
+
+            return "读取中…";
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
