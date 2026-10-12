@@ -6,7 +6,7 @@
 
 A Windows video and Funscript player with a redesigned interface, a local media library, and a timeline built around script playback.
 
-Current version: **v1.0.12.3**. The application source is available in this repository. Windows download packages are being prepared for [Releases](https://github.com/linkolter/ScriptPlayer-CN/releases); the new app, mpv, and FFmpeg packages have not been published yet.
+Current version: **v1.0.12.3**. Application source is available here. Find the Windows application, matching source, and installation instructions on the [v1.0.12.3 release page](https://github.com/linkolter/ScriptPlayer-CN/releases/tag/v1.0.12.3).
 
 ## Playback that feels natural
 
@@ -28,24 +28,20 @@ Current version: **v1.0.12.3**. The application source is available in this repo
 - A WPF interface with consistent fonts, buttons, spacing, and switches.
 - Simplified Chinese and English, dark and light themes, and five accent colors.
 - Optional interface animations and layouts that prioritize essential controls in narrow windows.
-- The bundled FFmpeg is located relative to the application, without a developer-specific installation path.
+- The installed FFmpeg is located relative to the application, without a developer-specific installation path.
 - Each user configures their own Handy key. It is encrypted for the current Windows user; release packages do not include the developer's private configuration or credentials.
 
 The current application starts in Simplified Chinese with a new profile. Choose English in **设置 → 外观** (Settings → Appearance). The README language does not change the application language automatically.
 
 ## Download and install
 
-The proposed release provides three separate Windows x64 downloads:
+Download `ScriptPlayer-v1.0.12.3-windows-x64-online-install.zip`. It contains the application and a reviewed runtime download script, without FFmpeg/libmpv binaries.
 
-1. `ScriptPlayer-v1.0.12.3-windows-x64-app.zip`
-2. `ScriptPlayer-v1.0.12.3-windows-x64-mpv.zip`
-3. `ScriptPlayer-v1.0.12.3-windows-x64-ffmpeg.zip`
+Extract the complete app ZIP into a new writable folder, install [7-Zip](https://www.7-zip.org/) if needed, and double-click `Install-Runtimes.cmd`. It downloads the exact tested components directly from Gyan and shinchiro, verifies archive and file SHA256/length, and never overwrites an existing component. Then run `ScriptPlayer.exe`. The launcher enables its local script for the installation process only, without changing persistent execution policy. See [installation details / 安装说明](INSTALL.md).
 
-Extract **all three into the same folder**, keeping their contents and subfolders. `ScriptPlayer.exe`, `libmpv-2.dll`, and `ffmpeg.exe` must be beside one another. Then run `ScriptPlayer.exe` and add your media and scripts. See [installation details / 安装说明](INSTALL.md).
+First installation needs about 183 MiB of upstream downloads. Matching existing components can be reused without a download or extractor; conflicting components stop installation. Re-enter your Handy key when moving to another Windows user or computer.
 
-For an update, reuse runtime files only when their hashes match that release's `runtime-manifest.json`. Re-enter your Handy key when moving to another Windows user or computer.
-
-**Runtime distribution preparation is still open.** Exact core source revisions have been identified, but the complete corresponding dependency sources and build materials for the current mpv/FFmpeg builds are not yet assembled. Separating binaries into release assets does not remove these requirements. See [third-party source status](docs/THIRD_PARTY_SOURCES.md). The current runtime archives are local candidates only.
+**Complete historical third-party materials remain pending.** Exact core snapshots are offered as a clearly marked PARTIAL archive, not a complete corresponding-source bundle. The old bundled mpv/FFmpeg ZIPs remain local candidates and are not part of this download set. See [runtime-material status](RUNTIME-MATERIALS.md).
 
 ## Source and building
 

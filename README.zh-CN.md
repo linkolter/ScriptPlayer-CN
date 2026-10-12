@@ -6,7 +6,7 @@
 
 一款面向 Windows 的本地视频与 Funscript 脚本播放器，重新整理了界面、媒体库和围绕脚本播放的时间轴，让日常操作更加自然、顺手。
 
-当前版本：**v1.0.12.3**。应用源码已在本仓库公开，Windows 下载包仍在准备中；新版程序、mpv 与 FFmpeg 分包尚未发布，后续将在 [Releases](https://github.com/linkolter/ScriptPlayer-CN/releases) 提供。
+当前版本：**v1.0.12.3**。应用源码在本仓库公开；Windows 程序包、配套源码和安装说明请查看 [v1.0.12.3 发布页](https://github.com/linkolter/ScriptPlayer-CN/releases/tag/v1.0.12.3)。
 
 ## 播放与浏览
 
@@ -28,24 +28,20 @@
 - WPF 界面统一字体、按钮、间距和滑动开关。
 - 简体中文与英文、深色与浅色主题、五种强调色。
 - 动画可关闭；窄窗口优先保留常用播放操作。
-- 内置 FFmpeg 从程序目录定位，不暴露开发者安装地址。
+- 安装后的 FFmpeg 从程序目录定位，不暴露开发者安装地址。
 - Handy 密钥由每位用户自行配置，以 Windows 当前用户加密保存；发行包不包含开发者私人配置或连接密钥。
 
 新配置默认使用简体中文，可在 **设置 → 外观** 切换为英文。README 的语言不会自动改变程序语言。
 
 ## 下载与安装
 
-计划提供三份 Windows x64 下载：
+下载 `ScriptPlayer-v1.0.12.3-windows-x64-online-install.zip`，包含程序和已审查的组件下载脚本，不附 FFmpeg/libmpv 二进制。
 
-1. `ScriptPlayer-v1.0.12.3-windows-x64-app.zip`
-2. `ScriptPlayer-v1.0.12.3-windows-x64-mpv.zip`
-3. `ScriptPlayer-v1.0.12.3-windows-x64-ffmpeg.zip`
+完整解压到新的可写目录，安装官方 [7-Zip](https://www.7-zip.org/)（若已有则复用），双击 `Install-Runtimes.cmd`。脚本从 Gyan、shinchiro 下载已测试的精确组件，校验压缩包及提取文件的大小与 SHA256，绝不覆盖已有组件，然后启动 `ScriptPlayer.exe`。启动器仅为当前安装进程允许本地脚本，不修改系统持久执行策略。详见[安装说明 / Installation](INSTALL.md)。
 
-**将三个 ZIP 全部解压到同一个文件夹**，保留文件与子目录。`ScriptPlayer.exe`、`libmpv-2.dll` 和 `ffmpeg.exe` 必须处于同一层，再运行程序并添加自己的媒体和脚本。详见[安装说明 / Installation](INSTALL.md)。
+首次组件下载约 183 MiB。已有匹配组件时不需要下载或解压器；组件冲突时停止。更换电脑或 Windows 用户后需要重新输入 Handy 密钥。
 
-更新时仅在运行组件哈希与该版本 `runtime-manifest.json` 一致的情况下复用旧组件。更换电脑或 Windows 用户后需要重新输入 Handy 密钥。
-
-**运行组件的公开分发准备仍未完成。** 已确认核心源码提交，但当前 mpv/FFmpeg 构建的全部依赖对应源码与构建材料尚未齐备。单独放到 Releases 不会取消这些要求。详见[第三方源码状态](docs/THIRD_PARTY_SOURCES.md)。目前运行组件 ZIP 只作为本地候选。
+**完整历史第三方材料仍待补。** 精确核心源码以 PARTIAL 附件提供，不能作为完整对应源码包。旧版 mpv/FFmpeg 二进制分包继续保留为本地候选，不属于此次下载附件。详见[运行组件材料状态](RUNTIME-MATERIALS.md)。
 
 ## 源码与构建
 

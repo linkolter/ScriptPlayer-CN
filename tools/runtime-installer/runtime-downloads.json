@@ -1,0 +1,29 @@
+{
+  "ApplicationVersion": "1.0.12.3",
+  "Distribution": "Download directly from original distributors; no runtime binary included",
+  "CompleteHistoricalSourceMaterials": false,
+  "Components": [
+    {
+      "Name": "mpv",
+      "Archive": "mpv-dev-x86_64-20260814-git-7b8915bc1d.7z",
+      "URL": "https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20260814/mpv-dev-x86_64-20260814-git-7b8915bc1d.7z",
+      "ArchiveBytes": 31181976,
+      "ArchiveSHA256": "0AF22B28E920620036D3AE08FD9283156DC9AF0420BF4DF84B0E02282094599C",
+      "Member": "libmpv-2.dll",
+      "File": "libmpv-2.dll",
+      "Bytes": 119757824,
+      "SHA256": "F709C7CA8B183BEC76B8158BF0C45C53018C63366750729352612F228FF7BDEA"
+    },
+    {
+      "Name": "ffmpeg",
+      "Archive": "ffmpeg-8.1-full_build.7z",
+      "URL": "https://github.com/GyanD/codexffmpeg/releases/download/8.1/ffmpeg-8.1-full_build.7z",
+      "ArchiveBytes": 160908318,
+      "ArchiveSHA256": "4DCBE10FA72BFFA3E976D09CF3335F53A2716A8041AF7A047609898FE6019069",
+      "Member": "ffmpeg-8.1-full_build/bin/ffmpeg.exe",
+      "File": "ffmpeg.exe",
+      "Bytes": 223360000,
+      "SHA256": "D1E2A156261ECC675081943197A85F08F2868784A0AF499171EDE89353EDAD31"
+    }
+  ]
+}

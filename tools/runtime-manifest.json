@@ -14,5 +14,10 @@
   ],
   "FFmpegReportedVersion": "8.1-full_build-www.gyan.dev",
   "FFmpegProvider": "https://www.gyan.dev/ffmpeg/builds/",
-  "SourceMaterialStatus": "Complete corresponding source/build materials before public binary distribution"
+  "SourceMaterialStatus": "Core-only PARTIAL snapshots; see RUNTIME-MATERIALS.md; not complete corresponding source",
+  "PackageLayout": "Application ZIP with original-distributor installer; no FFmpeg/libmpv binary ZIP attachments",
+  "DistributionStatus": "Application and original-distributor installer; complete historical runtime materials pending",
+  "RuntimeBinariesIncluded": false,
+  "CompleteHistoricalSourceMaterials": false,
+  "InstallerManifest": "runtime-installer/runtime-downloads.json"
 }

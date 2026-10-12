@@ -1,4 +1,10 @@
-﻿# 公开发布与私人配置
+# Current download route — 2026-10-12
+
+The selected app archive excludes FFmpeg/libmpv binaries and includes tools/runtime-installer files copied beside ScriptPlayer.exe. It downloads the tested versions from the original distributors. See ../INSTALL.md and ../RUNTIME-MATERIALS.md. Original binary redistribution is still pending complete corresponding materials; this route does not relabel partial inputs complete.
+
+The notes below describe the earlier local bundled candidates and their build/privacy constraints. They are historical evidence, not instructions to publish those runtime assets.
+
+# 公开发布与私人配置
 
 源码仓库保存源码、项目文件和许可证；FFmpeg/libmpv大二进制放GitHub Releases便携包，不嵌入主EXE。不上传整个开发工作区、测试profile、历史快照、日志、真实媒体或调试符号。gitignore不能替代最终包审计，尤其已跟踪文件/历史。
 
