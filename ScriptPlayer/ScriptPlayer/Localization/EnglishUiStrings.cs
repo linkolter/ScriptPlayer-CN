@@ -307,7 +307,7 @@ namespace ScriptPlayer.Localization
             { "这不是一个商业项目，也不是为了取代原版 ScriptPlayer。\n\n它只是一个普通爱好者，出于兴趣、热爱，以及一点点对使用体验的执着，逐渐打磨出来的作品。\n\n我希望它不只是能够正常工作，更希望每一次打开、选择、播放和操作，都足够自然、顺手。\n\n软件仍在持续完善中，难免存在不足。如果你喜欢它，欢迎使用；如果发现问题，也欢迎提出建议。", "This is a hobby project, not a commercial product or a replacement for the original ScriptPlayer.\n\nIt has grown gradually from personal interest and a desire for a better everyday experience.\n\nMy hope is that opening, selecting, playing and adjusting media will feel natural and comfortable.\n\nThe software is still being improved. You are welcome to use it, report problems and suggest improvements." },
             { "感谢原版 ScriptPlayer 的开发者，以及为开源社区作出贡献的每一个人。", "Thank you to the developers of the original ScriptPlayer and everyone who contributes to open source." },
             { "项目来源：", "Project source:" },
-            { "版本： v1.0.12.3\n发布日期： 2026.10.11\n性质： 非官方社区衍生版本，持续维护中。", "Version: v1.0.12.3\nRelease date: 2026.10.11\nStatus: Unofficial community fork, actively maintained." },
+            { "版本： v1.0.12.4\n发布日期： 2026.10.16\n性质： 非官方社区衍生版本，持续维护中。", "Version: v1.0.12.4\nRelease date: 2026.10.16\nStatus: Unofficial community fork, actively maintained." },
             { "版本： {0}\n发布日期： {1}\n性质： 非官方社区衍生版本，持续维护中。", "Version: {0}\nRelease date: {1}\nStatus: Unofficial community fork, actively maintained." }
         };
     }

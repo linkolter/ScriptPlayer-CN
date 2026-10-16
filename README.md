@@ -6,7 +6,7 @@
 
 A Windows video and Funscript player with a redesigned interface, a local media library, and a timeline built around script playback.
 
-Current version: **v1.0.12.3**. Application source is available here. Find the Windows application, matching source, and installation instructions on the [v1.0.12.3 release page](https://github.com/linkolter/ScriptPlayer-CN/releases/tag/v1.0.12.3).
+Current source version: **v1.0.12.4**. The updated portable package is a local candidate; publishing it is a separate step. Check the [Releases page](https://github.com/linkolter/ScriptPlayer-CN/releases) for files actually available to download.
 
 ## Playback that feels natural
 
@@ -35,13 +35,12 @@ The current application starts in Simplified Chinese with a new profile. Choose 
 
 ## Download and install
 
-Download `ScriptPlayer-v1.0.12.3-windows-x64-online-install.zip`. It contains the application and a reviewed runtime download script, without FFmpeg/libmpv binaries.
+Latest local candidate: `ScriptPlayer-v1.0.12.4-windows-x64-portable-candidate.zip`.
+Requires Windows 10/11 x64 and .NET Framework 4.8. Extract the complete ZIP into a new writable folder and run `ScriptPlayer.exe`. Keep all DLLs and subfolders; no online runtime installer or 7-Zip installation step is needed. Upgrade into a new folder to preserve the previous app and configuration. See [installation details](INSTALL.md).
 
-Extract the complete app ZIP into a new writable folder, install [7-Zip](https://www.7-zip.org/) if needed, and double-click `Install-Runtimes.cmd`. It downloads the exact tested components directly from Gyan and shinchiro, verifies archive and file SHA256/length, and never overwrites an existing component. Then run `ScriptPlayer.exe`. The launcher enables its local script for the installation process only, without changing persistent execution policy. See [installation details / 安装说明](INSTALL.md).
+The local portable candidate includes MSYS2 UCRT64 mpv 0.41.0-8 (mpv v0.41.0) and Gyan FFmpeg 9.0.2 full. Component identities and checksums are recorded in `tools/runtime-manifest.json`. Runtime binaries are not tracked in this source repository; downloading source alone does not provide them.
 
-First installation needs about 183 MiB of upstream downloads. Matching existing components can be reused without a download or extractor; conflicting components stop installation. Re-enter your Handy key when moving to another Windows user or computer.
-
-**Complete historical third-party materials remain pending.** Exact core snapshots are offered as a clearly marked PARTIAL archive, not a complete corresponding-source bundle. The old bundled mpv/FFmpeg ZIPs remain local candidates and are not part of this download set. See [runtime-material status](RUNTIME-MATERIALS.md).
+Complete third-party corresponding-material review remains pending. A different clean computer and physical devices have not been validated. See [runtime-material status](RUNTIME-MATERIALS.md). The legacy v1.0.12.3 online installer is not used for this candidate.
 
 ## Source and building
 
@@ -49,7 +48,7 @@ WPF + .NET Framework 4.8 + libmpv. Main project: `ScriptPlayer/ScriptPlayer/Scri
 
 This repository includes `tools/Build-Public.ps1` and `tools/runtime-manifest.json`. Restore the required packages and place the matching runtime files in `ScriptPlayer/ScriptPlayer/Runtime` before building. The validated local build used existing MK312 output; a clean build of the whole solution on a fresh machine has **not** been verified. Do not treat the packaged script as a one-command clean-machine build guarantee.
 
-The root `SHA256SUMS.txt` records file bytes in the curated source archive. Git line-ending normalization and subsequent documentation edits mean it should not be used to verify the current checkout.
+The root `SHA256SUMS.txt` records the two prepared v1.0.12.4 ZIP checksums, not checkout-file hashes. The PARTIAL source archive is not a complete corresponding-source bundle. Local development uses this single checkout; see [workspace routing](docs/WORKSPACE.md). NFO examples are documented in [English](docs/NFO.en.md) and [Chinese](docs/NFO.zh-CN.md).
 
 ## Feedback
 

@@ -1,7 +1,7 @@
 ﻿param([Parameter(Mandatory=$true)][string]$PrivateBin,
       [Parameter(Mandatory=$true)][string]$OutputDirectory)
 $ErrorActionPreference='Stop'
-$workspace=Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+$workspace=& (Join-Path $PSScriptRoot 'Find-LocalWorkspace.ps1')
 $project=Split-Path $PSScriptRoot -Parent
 $source=(Resolve-Path -LiteralPath (Join-Path $workspace $PrivateBin)).Path
 $output=[IO.Path]::GetFullPath((Join-Path $project $OutputDirectory))

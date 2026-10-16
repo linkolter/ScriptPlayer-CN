@@ -1,6 +1,6 @@
-param([string]$PrivateBin='playback-baseline/round1-20261010/build', [string]$EvidenceDirectory='.scratch/round1-r03-b01/evidence')
+﻿param([string]$PrivateBin='playback-baseline/round1-20261010/build', [string]$EvidenceDirectory='.scratch/round1-r03-b01/evidence')
 $ErrorActionPreference='Stop'
-$workspace=Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+$workspace=& (Join-Path $PSScriptRoot 'Find-LocalWorkspace.ps1')
 $bin=[IO.Path]::GetFullPath((Join-Path $workspace $PrivateBin))
 $repository=Split-Path $PSScriptRoot -Parent
 $evidence=[IO.Path]::GetFullPath((Join-Path $repository $EvidenceDirectory))

@@ -1,39 +1,37 @@
-# Installation / 安装说明
+# Installation / 安装
 
 ## English
 
-Application version: **v1.0.12.3**, Windows x64, .NET Framework 4.8. This download contains the application and a runtime installer. FFmpeg and libmpv are downloaded directly from their original distributors; they are **not included in this ZIP**. Complete historical third-party source/build inputs are still pending; see `RUNTIME-MATERIALS.md`.
+Prepared local candidate: `ScriptPlayer-v1.0.12.4-windows-x64-portable-candidate.zip`.
+Check the repository Releases page for whether that attachment has been published.
 
-1. Verify the app ZIP against release `SHA256SUMS.txt`, then extract the complete ZIP into a **new writable folder**. Keep all application files together.
-2. Install [7-Zip](https://www.7-zip.org/) if unavailable. The installer uses your existing `7z.exe` and never installs a tool automatically.
-3. Close ScriptPlayer, review the local installer files, then double-click **Install-Runtimes.cmd**. An Internet connection to GitHub's original distributors and release-asset delivery service is required. The launcher sets `ExecutionPolicy Bypass` for its own PowerShell process only; it does not change persistent system/user policy or download any script. Organization-enforced restrictions still apply; follow your organization's policy if blocked.
-4. Wait for `Installed` or `AlreadyInstalled`, then run **ScriptPlayer.exe**. New profiles default to Chinese; select English in **设置 → 外观** (Settings → Appearance).
+1. Use Windows 10/11 x64 with .NET Framework 4.8.
+2. Verify the ZIP against the matching SHA256SUMS.txt.
+3. Extract the complete ZIP into a new writable folder.
+4. Keep every DLL and subfolder, then run ScriptPlayer.exe.
+5. Select English under 设置 → 外观. Enter your own device credentials.
 
-The pinned downloads total about **183 MiB**. Allow around **600 MiB of free space** while installing, in addition to the application. The resulting `ffmpeg.exe` and `libmpv-2.dll` are placed beside `ScriptPlayer.exe`. Temporary downloads are removed after success or successful rollback. No media directories, user settings, history, keys, registry entries, or Windows PATH are changed.
-
-Advanced usage from PowerShell in the extracted folder:
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install-Runtimes.ps1 -SevenZip 'C:\Program Files\7-Zip\7z.exe'
-# Optional: original archives already downloaded into a cache folder
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install-Runtimes.ps1 -ArchiveDirectory 'D:\RuntimeDownloads'
-```
-
-Offline/cache filenames: `mpv-dev-x86_64-20260814-git-7b8915bc1d.7z` and `ffmpeg-8.1-full_build.7z`. The exact original URLs, sizes and hashes are in `runtime-downloads.json`. Archives and extracted EXE/DLL are both verified. Existing matching components are reused; a different existing component stops installation **without overwriting it**. Use a new program folder if you want a different installation. No downloaded script is executed.
-
-If an error occurs before installation, neither target file is published. A failure during installation rolls back newly moved files. If rollback cannot finish, the error names a retained `.runtime-install-…` folder containing `recovery.json` and staged files; keep it and report the error. The record identifies which target currently exists. Do not assume that an incomplete rollback restored everything. Correct the blocking file permission/lock and inspect the reported state before retrying.
-
-Recheck extracted files with `SHA256SUMS-app.txt`; it describes files shipped in the app ZIP, excluding itself and the separately downloaded runtimes. Verify installed runtime files against `runtime-downloads.json`. For updates, prefer a new program folder and keep your personal application data. Re-enter Handy credentials after changing Windows account or computer; never share your private profile.
+The candidate includes mpv v0.41.0 and FFmpeg 9.0.2; no runtime download script is needed.
+Source-only downloads do not contain native runtime binaries. Do not use the legacy
+v1.0.12.3 Install-Runtimes.cmd for this package. For upgrades, preserve the old app
+and private profile; do not publish your settings or credentials. A new computer or
+Windows user needs its own Handy key configuration.
 
 ## 简体中文
 
-版本 **v1.0.12.3**，Windows x64，需 .NET Framework 4.8。本包包含程序与组件下载脚本，**不包含 FFmpeg/libmpv 二进制**；脚本从原作者下载已测试的精确版本。完整历史源码与构建输入仍待补，见 `RUNTIME-MATERIALS.md`。
+本地候选包为 `ScriptPlayer-v1.0.12.4-windows-x64-portable-candidate.zip`，
+是否已发布请以 Releases 实际附件为准。
 
-1. 校验 ZIP，完整解压到新的可写目录。
-2. 安装官方 [7-Zip](https://www.7-zip.org/)（若已有则复用，不自动安装工具）。
-3. 退出播放器，检查本地安装脚本后双击 **Install-Runtimes.cmd**。需能访问 GitHub 及其发行文件下载服务。启动器仅为当前 PowerShell 安装进程指定 `ExecutionPolicy Bypass`，不修改系统/用户持久策略，不下载脚本；组织强制策略仍适用，若被阻止请遵循组织策略。
-4. 出现 `Installed` / `AlreadyInstalled` 后启动 **ScriptPlayer.exe**。
+1. 系统需要 Windows 10/11 x64 与 .NET Framework 4.8。
+2. 使用对应 SHA256SUMS.txt 核对压缩包。
+3. 完整解压到新的可写目录。
+4. 保留全部 DLL 和子目录，运行 ScriptPlayer.exe。
+5. 设备密钥自行配置；更换电脑或 Windows 用户后重新填写。
 
-首次组件下载约 **183 MiB**，安装时建议另留 **600 MiB** 空间。压缩包及提取文件均校验大小与 SHA256；`ffmpeg.exe`、`libmpv-2.dll` 安装在主程序旁。匹配的旧文件直接复用，冲突文件拒绝覆盖。支持 `-SevenZip` 指定工具、`-ArchiveDirectory` 指定已下载原包目录；原包文件名和来源见英文段及 `runtime-downloads.json`。
+候选包已附 mpv v0.41.0 与 FFmpeg 9.0.2。
+不需要额外在线安装组件或安装 7-Zip。仅下载源码不含组件二进制。
+旧 v1.0.12.3 在线安装脚本不适用于此包。升级使用新目录并保留旧程序和
+私人配置，不要将密钥及设置上传仓库。
 
-失败时回滚本次新文件；若回滚也失败，会保留错误信息指定的临时目录及 `recovery.json`，请勿删除，按实际状态处理后再重试。脚本不修改媒体、私人配置、密钥、注册表或 PATH。更新建议使用新程序目录并保留个人数据；分享时不要附带自己的配置、历史、日志或密钥。
+完整第三方对应材料审查、另一台干净电脑验证与实物设备验证仍待完成。
+参见 [运行组件材料状态](RUNTIME-MATERIALS.md)。

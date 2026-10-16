@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<movie>
+  <title>Demo Video</title>
+  <originaltitle>Original Demo Title</originaltitle>
+  <type>Multi-axis</type>
+  <source>https://example.com/demo</source>
+  <plot><![CDATA[Original demonstration metadata. Script statistics below are illustrative.]]></plot>
+  <favorite>false</favorite>
+  <tag>Demo</tag>
+  <tag>Multi-axis</tag>
+  <scripts>
+    <script file="Demo-AuthorA.funscript">
+      <duration>00:01:00</duration>
+      <durationms>60000</durationms>
+      <actions>121</actions>
+    </script>
+    <script file="Demo-AuthorB.funscript">
+      <duration>00:00:45</duration>
+      <durationms>45000</durationms>
+      <actions>91</actions>
+    </script>
+  </scripts>
+</movie>

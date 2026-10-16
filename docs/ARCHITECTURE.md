@@ -1,6 +1,10 @@
-﻿# 当前架构
+# 当前架构
 
-核实日期：2026-10-10 接管，2026-10-11 更新 R02 与既有界面维护结果。范围是本地 `ScriptPlayer-merged`；上层工作目录含构建脚本、测试视频、net48 参考程序集、基线和历史成品，不作为第二份生产源码。文档描述当前 implementation，改进目标见 [MAINTENANCE](MAINTENANCE.md)。
+核实日期：2026-10-10 接管，2026-10-11 更新 R02 与既有界面维护结果。2026-10-16起范围固定为GitHub Desktop当前检出目录 `github-upload/ScriptPlayer-CN-20261012`；旧 `ScriptPlayer-merged` 仅保留为历史参考及缓存；上层工作目录含构建脚本、测试视频、net48 参考程序集、基线和历史成品，不作为第二份生产源码。文档描述当前 implementation，改进目标见 [MAINTENANCE](MAINTENANCE.md)。
+
+## v1.0.12.4 运行库集成（2026-10-16）
+
+本地候选使用官网列出的 MSYS2 UCRT64 mpv 0.41.0-8，客户端 API 实测为 2.5；实际自报 `mpv v0.41.0`，内部 FFmpeg 为 9.0.2。独立 ffmpeg.exe 为 Gyan 9.0.2 full build。仍由 MpvController/MpvTimeSource 提供时间，FFmpeg 不接管播放。原单个大 libmpv DLL 改为131项分离 DLL 的静态/延迟导入闭包；项目内容规则复制全部 Runtime/*.dll，构建脚本逐项核对 runtime-versions.json。该闭包不证明动态插件或其数据文件完整；主应用已有功能以回归记录为准。旧版本描述与图的职责不变。
 
 ## 项目与入口
 

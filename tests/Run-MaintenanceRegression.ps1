@@ -1,6 +1,6 @@
-param([string]$PublishName='playback-baseline/round1-20261010/final-build')
+﻿param([string]$PublishName='playback-baseline/round1-20261010/final-build')
 $ErrorActionPreference='Stop'
-$workspace=Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+$workspace=& (Join-Path $PSScriptRoot 'Find-LocalWorkspace.ps1')
 Add-Type @'
 using System;
 using System.Runtime.InteropServices;

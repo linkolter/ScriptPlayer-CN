@@ -1,9 +1,3 @@
-# Current download route — 2026-10-12
-
-The selected app archive excludes FFmpeg/libmpv binaries and includes tools/runtime-installer files copied beside ScriptPlayer.exe. It downloads the tested versions from the original distributors. See ../INSTALL.md and ../RUNTIME-MATERIALS.md. Original binary redistribution is still pending complete corresponding materials; this route does not relabel partial inputs complete.
-
-The notes below describe the earlier local bundled candidates and their build/privacy constraints. They are historical evidence, not instructions to publish those runtime assets.
-
 # 公开发布与私人配置
 
 源码仓库保存源码、项目文件和许可证；FFmpeg/libmpv大二进制放GitHub Releases便携包，不嵌入主EXE。不上传整个开发工作区、测试profile、历史快照、日志、真实媒体或调试符号。gitignore不能替代最终包审计，尤其已跟踪文件/历史。
@@ -26,9 +20,11 @@ Handy连接密钥只在内存中供连接使用；普通XML导出不包含该字
 
 ## 许可证与公开前事项
 
-本项目沿用GPL-3.0和原ScriptPlayer来源声明。随程序附带第三方许可证，并为发布版本提供对应源代码。当前FFmpeg二进制自报8.1-full_build-www.gyan.dev，启用gpl/version3/static；不自动替换新版本，不把当前提供者最新版当成这份二进制。mpv来源记录见随附Licenses。
+本项目沿用GPL-3.0和原ScriptPlayer来源声明。随程序附带第三方许可证，并为发布版本提供对应源代码。历史 v1.0.12.3 的 FFmpeg 二进制自报8.1-full_build-www.gyan.dev，启用gpl/version3/static；其材料不能替代新版材料。2026-10-16 的 v1.0.12.4 本地候选改用 Gyan 9.0.2 full build 与 MSYS2 UCRT64 mpv 0.41.0-8，共132项运行组件，来源与逐文件身份见程序旁 runtime-versions.json，许可见 Licenses/Runtime。构建脚本复制并核验该清单；候选已具备本地运行组件，不依赖旧在线安装脚本。完整对应材料与新机器验收仍需完成，不能把本地集成或 PARTIAL 核心源码包当作公开发布审查通过。
 
 当前本地下载候选尚未具备FFmpeg/libmpv及所有静态依赖的完整对应源码/构建材料附件。必须补齐精确版本与材料并建立实际下载入口，再作为公开发行上传；来源主页或GPL正文不等于已完成此项。
+
+2026-10-12 已重新下载原发行包并逐字匹配当前 EXE/DLL，取得三份精确核心源码（含 DLL 内部的另一份 FFmpeg）、固定 mpv 构建配方及原构建日志。依赖历史快照和完整构建输入仍未补齐，待补项保持开放；详见 [THIRD_PARTY_SOURCES.md](THIRD_PARTY_SOURCES.md)。部分材料独立打包并标记 PARTIAL，不改写已验收便携 ZIP 或宣称完整。
 
 官方参考：
 

@@ -109,7 +109,7 @@
       <Border x:Name="CaptionBar" DockPanel.Dock="Top" Height="32" Background="{DynamicResource MediaNavigationBrush}">
         <DockPanel>
           <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" shell:WindowChrome.IsHitTestVisibleInChrome="True">
-            <Button x:Name="VersionButton" Content="v1.0.12.3" ToolTip="关于 ScriptPlayer" AutomationProperties.Name="版本与关于 ScriptPlayer" Padding="12,0" MinHeight="0" Height="32" Click="VersionButton_Click"/>
+            <Button x:Name="VersionButton" Content="v1.0.12.4" ToolTip="关于 ScriptPlayer" AutomationProperties.Name="版本与关于 ScriptPlayer" Padding="12,0" MinHeight="0" Height="32" Click="VersionButton_Click"/>
             <Button Content="&#xE921;" FontFamily="Segoe MDL2 Assets" Width="46" MinHeight="0" Height="32" ToolTip="最小化" AutomationProperties.Name="最小化" Click="CaptionMinimize_Click"/>
             <Button x:Name="CaptionMaximizeButton" Content="&#xE922;" FontFamily="Segoe MDL2 Assets" Width="46" MinHeight="0" Height="32" ToolTip="最大化或还原" AutomationProperties.Name="最大化或还原" Click="CaptionMaximize_Click"/>
             <Button Content="&#xE8BB;" FontFamily="Segoe MDL2 Assets" Width="46" MinHeight="0" Height="32" ToolTip="关闭" AutomationProperties.Name="关闭" Click="CaptionClose_Click"/>

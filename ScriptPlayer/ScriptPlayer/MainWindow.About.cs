@@ -31,7 +31,7 @@ namespace ScriptPlayer
                     if (item is TextBlock text && text.Tag is double size) text.FontSize = size;
             };
             AddAboutText(content, "ScriptPlayer", 28, true);
-            AddAboutText(content, "Version v1.0.12.3", 18, true);
+            AddAboutText(content, "Version v1.0.12.4", 18, true);
             AddAboutText(content, "让播放回归简单，让体验更加自由。", 14, false, true);
             AddAboutText(content, "关于本项目", 20, true);
             AddAboutText(content, "最初，我只是想要一个更加出色的本地脚本播放器。\n\n原版 ScriptPlayer 已经具备出色的脚本同步和设备控制能力，但在日常使用中，我总觉得媒体管理、界面交互和一些细节还有改进的空间。\n\n于是，从修改一个按钮、调整一个界面开始，慢慢重构了播放器的布局与交互逻辑，并陆续加入了新的功能。改着改着，它就变成了现在的模样。\n\n本项目基于开源 ScriptPlayer 进行深度二次开发，保留其核心功能，并围绕日常使用体验进行了扩展，包括：");
@@ -51,7 +51,7 @@ namespace ScriptPlayer
                 catch (System.Exception ex) { MessageBox.Show(this, "无法打开项目来源链接：" + ex.Message, "ScriptPlayer"); }
             };
             source.Inlines.Add(link); content.Children.Add(source);
-            AddAboutText(content, "版本： v1.0.12.3\n发布日期： 2026.10.11\n性质： 非官方社区衍生版本，持续维护中。");
+            AddAboutText(content, "版本： v1.0.12.4\n发布日期： 2026.10.16\n性质： 非官方社区衍生版本，持续维护中。");
             await InlineDialogService.ShowAsync(new Window { Title = "关于 ScriptPlayer", Width = 720, Content = content });
         }
 

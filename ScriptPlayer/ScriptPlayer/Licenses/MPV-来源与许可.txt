@@ -1,11 +1,16 @@
 MPV 内嵌播放组件
 ==================
 
-本软件随附的 libmpv-2.dll 来自 mpv-winbuild-cmake 的 Windows x86_64 构建：
-https://github.com/shinchiro/mpv-winbuild-cmake/releases/tag/20260814
+v1.0.12.4 本地候选使用 mpv 0.41.0 的 MSYS2 UCRT64 构建：
+https://packages.msys2.org/packages/mingw-w64-ucrt-x86_64-mpv
 
-下载文件：mpv-dev-x86_64-20260814-git-7b8915bc1d.7z
-SHA-256：0af22b28e920620036d3ae08fd9283156dc9af0420bf4df84b0e02282094599c
+下载文件：mingw-w64-ucrt-x86_64-mpv-0.41.0-8-any.pkg.tar.zst
+SHA-256：aca9ce7359c63caa33612d160edad059fd931e1c434a87d6ca01f5af015cac76
+
+官方 Windows 稳定版 EXE 包未附共享 libmpv，因此使用官网列出的 MSYS2 同版本构建。
+libmpv-2.dll 及分离依赖必须一起保留，不要只复制一个 DLL。
+精确文件、依赖包、校验和见程序旁 runtime-versions.json；已有依赖许可见 Licenses/Runtime。
+完整对应源码与构建材料仍待核对；本地候选通过运行测试不代表已完成公开分发材料审查。
 
 mpv 项目与许可信息：
 https://github.com/mpv-player/mpv

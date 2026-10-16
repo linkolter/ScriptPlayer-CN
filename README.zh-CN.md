@@ -6,7 +6,7 @@
 
 一款面向 Windows 的本地视频与 Funscript 脚本播放器，重新整理了界面、媒体库和围绕脚本播放的时间轴，让日常操作更加自然、顺手。
 
-当前版本：**v1.0.12.3**。应用源码在本仓库公开；Windows 程序包、配套源码和安装说明请查看 [v1.0.12.3 发布页](https://github.com/linkolter/ScriptPlayer-CN/releases/tag/v1.0.12.3)。
+当前源码版本：**v1.0.12.4**。更新后的便携包目前为本地候选，上传发行附件是独立步骤。实际可下载文件请查看 [Releases 发布页](https://github.com/linkolter/ScriptPlayer-CN/releases)。
 
 ## 播放与浏览
 
@@ -35,13 +35,12 @@
 
 ## 下载与安装
 
-下载 `ScriptPlayer-v1.0.12.3-windows-x64-online-install.zip`，包含程序和已审查的组件下载脚本，不附 FFmpeg/libmpv 二进制。
+最新本地候选：`ScriptPlayer-v1.0.12.4-windows-x64-portable-candidate.zip`。
+需要 Windows 10/11 x64 和 .NET Framework 4.8。完整解压到新的可写目录，直接运行 `ScriptPlayer.exe`；保留所有 DLL 和子目录，无需在线组件安装器或 7-Zip 安装步骤。升级时使用新目录，不覆盖旧版和用户配置。详见 [安装说明](INSTALL.md)。
 
-完整解压到新的可写目录，安装官方 [7-Zip](https://www.7-zip.org/)（若已有则复用），双击 `Install-Runtimes.cmd`。脚本从 Gyan、shinchiro 下载已测试的精确组件，校验压缩包及提取文件的大小与 SHA256，绝不覆盖已有组件，然后启动 `ScriptPlayer.exe`。启动器仅为当前安装进程允许本地脚本，不修改系统持久执行策略。详见[安装说明 / Installation](INSTALL.md)。
+本地便携候选包含 MSYS2 UCRT64 mpv 0.41.0-8（mpv v0.41.0）和 Gyan FFmpeg 9.0.2 full。组件身份及校验见 `tools/runtime-manifest.json`。源码仓库不跟踪这些二进制，单独下载源码不会自动获得组件。
 
-首次组件下载约 183 MiB。已有匹配组件时不需要下载或解压器；组件冲突时停止。更换电脑或 Windows 用户后需要重新输入 Handy 密钥。
-
-**完整历史第三方材料仍待补。** 精确核心源码以 PARTIAL 附件提供，不能作为完整对应源码包。旧版 mpv/FFmpeg 二进制分包继续保留为本地候选，不属于此次下载附件。详见[运行组件材料状态](RUNTIME-MATERIALS.md)。
+完整第三方对应材料审查仍待完成；没有宣称在另一台干净电脑或实物设备上完成验证。详见 [运行组件材料状态](RUNTIME-MATERIALS.md)。旧 v1.0.12.3 在线安装脚本不用于此候选。
 
 ## 源码与构建
 
@@ -49,7 +48,7 @@ WPF + .NET Framework 4.8 + libmpv。主工程：`ScriptPlayer/ScriptPlayer/Scrip
 
 本仓库提供 `tools/Build-Public.ps1` 与 `tools/runtime-manifest.json`。构建前恢复依赖包，并将匹配的运行组件放入 `ScriptPlayer/ScriptPlayer/Runtime`。本机已验证构建使用已有 MK312 产物，**尚未验证新机器从零构建整个解决方案**，不能将脚本理解为干净环境的一键构建保证。
 
-根目录 `SHA256SUMS.txt` 记录整理源码包内文件的原始字节；Git 换行规范化及后续文档更新后，不应用它校验当前检出目录。
+根目录 `SHA256SUMS.txt` 记录两个已准备的 v1.0.12.4 ZIP 校验值，不用于校验源码目录。PARTIAL 材料包不是完整对应源码包。开发固定使用当前检出目录，参见 [工作目录约定](docs/WORKSPACE.md)。NFO 格式及示例见 [中文指南](docs/NFO.zh-CN.md) 与 [English guide](docs/NFO.en.md)。
 
 ## 反馈
 

@@ -1,6 +1,6 @@
-param([string]$PrivateBin,[string]$EvidenceDirectory)
+﻿param([string]$PrivateBin,[string]$EvidenceDirectory)
 $ErrorActionPreference='Stop'
-$workspace=Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+$workspace=& (Join-Path $PSScriptRoot 'Find-LocalWorkspace.ps1')
 $bin=[IO.Path]::GetFullPath((Join-Path $workspace $PrivateBin))
 $evidence=[IO.Path]::GetFullPath((Join-Path $workspace $EvidenceDirectory))
 New-Item -ItemType Directory -Path $evidence -Force | Out-Null
@@ -11,7 +11,7 @@ if($LASTEXITCODE -ne 0){throw 'Compile failed'}
 $previous=$env:APPDATA
 $results=@()
 function Invoke-Case($name,$order,$pointer) {
-    $arguments=@((Join-Path $workspace 'ui-test-video.mp4'),(Join-Path $evidence "$name.log"),(Join-Path $workspace 'ScriptPlayer-merged/ScriptPlayer/ScriptPlayer/App.xaml'),$order,$pointer)
+    $arguments=@((Join-Path $workspace 'ui-test-video.mp4'),(Join-Path $evidence "$name.log"),(Join-Path (Split-Path $PSScriptRoot -Parent) 'ScriptPlayer/ScriptPlayer/App.xaml'),$order,$pointer)
     $quoted=$arguments | ForEach-Object { '"'+$_+'"' }
     $process=Start-Process -FilePath "$bin/PlaybackChromeIsolationTests.exe" -ArgumentList $quoted -PassThru -WindowStyle Hidden
     if(!$process.WaitForExit(30000)) { $process.Kill(); throw "Diagnostic timeout: $name PID $($process.Id)" }
