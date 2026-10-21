@@ -11,7 +11,7 @@
     <Border Background="{DynamicResource MediaSurfaceBrush}" BorderBrush="{DynamicResource MediaBorderBrush}" BorderThickness="1"
             CornerRadius="{DynamicResource MediaCardRadius}" ClipToBounds="True">
     <StackPanel Width="300">
-        <shared:GifPlayer Name="player" Background="{DynamicResource MediaBackgroundBrush}" AutoPlay="True" Stretch="Uniform" Height="169"/>
+        <shared:GifPlayer Name="player" Background="{DynamicResource MediaBackgroundBrush}" AutoPlay="False" Stretch="Uniform" Height="169"/>
         <Grid Background="{DynamicResource MediaBackgroundBrush}">
             <Image Name="heatMap" HorizontalAlignment="Stretch" Height="15" Stretch="Fill" />
         </Grid>

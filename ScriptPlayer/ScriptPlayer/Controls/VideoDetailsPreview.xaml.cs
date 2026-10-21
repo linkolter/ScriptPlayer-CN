@@ -64,16 +64,22 @@ namespace ScriptPlayer.Controls
             Unloaded += OnUnloaded;
 
             InitializeComponent();
+            IsVisibleChanged += (s,e) => { ApplyPreviewPolicy(); if (IsVisible) RecheckLoadInfo(); };
         }
 
         private void OnUnloaded(object sender, RoutedEventArgs e)
         {
+            Themes.MotionPresentation.PolicyChanged -= ApplyPreviewPolicy;
+            player.AutoPlay = false;
             //Debug.WriteLine("UNLOADED");
             Clear();
         }
 
         private void OnLoaded(object o, RoutedEventArgs routedEventArgs)
         {
+            Themes.MotionPresentation.PolicyChanged -= ApplyPreviewPolicy;
+            Themes.MotionPresentation.PolicyChanged += ApplyPreviewPolicy;
+            ApplyPreviewPolicy();
             //Debug.WriteLine("LOADED");
             RecheckLoadInfo();
         }
@@ -94,7 +100,7 @@ namespace ScriptPlayer.Controls
 
             if (_currentEntryLoaded)
             {
-                player.Start();
+                ApplyPreviewPolicy();
                 return;
             }
 
@@ -116,9 +122,20 @@ namespace ScriptPlayer.Controls
         private void LoadPreview(string path)
         {
             if (!Dispatcher.CheckAccess())
-                Dispatcher.BeginInvoke(new Action(() => { player.Load(path); }));
+                Dispatcher.BeginInvoke(new Action(() => { if (IsLoaded) { ApplyPreviewPolicy(); player.Load(path); } }));
             else
+            {
+                ApplyPreviewPolicy();
                 player.Load(path);
+            }
+        }
+
+        private void ApplyPreviewPolicy()
+        {
+            bool wasPlaying = player.AutoPlay;
+            player.AutoPlay = IsLoaded && IsVisible && Themes.MotionPresentation.AnimatePreviews;
+            if (player.AutoPlay && !wasPlaying) player.Start();
+            else if (!player.AutoPlay) player.BeginAnimation(ScriptPlayer.Shared.GifPlayer.ProgressProperty, null);
         }
 
         private void FindRelatedFile(string path, string extension, Action<string> action)

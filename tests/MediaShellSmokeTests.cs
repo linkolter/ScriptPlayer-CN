@@ -70,7 +70,7 @@ internal static class MediaShellSmokeTests
                 window = (MainWindow)app.MainWindow;
                 Check(((TextBlock)window.FindName("PageTitle")).Text == "主页" && ((FrameworkElement)window.FindName("BrowsePage")).IsVisible, "Startup opens home, not the idle native video surface");
                 var versionButton = (Button)window.FindName("VersionButton");
-                Check((string)versionButton.Content == "v1.0.12.4" && versionButton.IsVisible, "Caption version entry uses the unified version");
+                Check((string)versionButton.Content == "v1.0.12.6" && versionButton.IsVisible, "Caption version entry uses the unified version");
                 Window aboutDialog = null;
                 Action<Window> captureAbout = dialog => aboutDialog = dialog;
                 InlineDialogService.Opened += captureAbout;
@@ -80,11 +80,11 @@ internal static class MediaShellSmokeTests
                     await Task.Delay(100);
                     Check(aboutDialog != null && !aboutDialog.IsVisible && InlineDialogService.IsOpen, "About opens inside player without a new window");
                     var aboutTexts = FindVisualChildren<TextBlock>((DependencyObject)window.FindName("ShellRoot")).Select(t => t.Text).ToArray();
-                    Check(aboutTexts.Any(t => t == "Version v1.0.12.4") && !aboutTexts.Any(t => t.Contains("0.9.0")), "About has no obsolete beta version");
+                    Check(aboutTexts.Any(t => t == "Version v1.0.12.6") && !aboutTexts.Any(t => t.Contains("0.9.0")), "About has no obsolete beta version");
                     Check(aboutTexts.Any(t => t.Contains("让播放回归简单")) && aboutTexts.Any(t => t.Contains("非官方社区衍生版本")), "About includes author text and project identity");
                     Check(FindVisualChildren<TextBlock>((DependencyObject)window.FindName("ShellRoot")).Any(t => t.Inlines.OfType<System.Windows.Documents.Hyperlink>().Any()), "About includes actionable project source link");
                     Check(FindVisualChildren<TextBlock>((DependencyObject)window.FindName("ShellRoot")).Any(t => t.Text == "ScriptPlayer" && t.FontSize == 28), "About preserves heading typography");
-                    Check(FindVisualChildren<ScrollViewer>((DependencyObject)window.FindName("ShellRoot")).Any(t => t.Content is StackPanel && ((StackPanel)t.Content).Children.OfType<TextBlock>().Any(label => label.Text == "Version v1.0.12.4") && t.HorizontalScrollBarVisibility == ScrollBarVisibility.Disabled && t.VerticalScrollBarVisibility == ScrollBarVisibility.Auto), "About prose uses vertical scrolling and wrapping");
+                    Check(FindVisualChildren<ScrollViewer>((DependencyObject)window.FindName("ShellRoot")).Any(t => t.Content is StackPanel && ((StackPanel)t.Content).Children.OfType<TextBlock>().Any(label => label.Text == "Version v1.0.12.6") && t.HorizontalScrollBarVisibility == ScrollBarVisibility.Disabled && t.VerticalScrollBarVisibility == ScrollBarVisibility.Auto), "About prose uses vertical scrolling and wrapping");
                     SavePreview(window, "version-about.png");
                     InlineDialogService.Complete(aboutDialog, false);
                     await Task.Delay(100);
@@ -112,7 +112,7 @@ internal static class MediaShellSmokeTests
                 Call("OpenAdvancedSettings", "Remember");
                 var editor = (SettingsDialog)typeof(MainWindow).GetField("unifiedSettingsEditor", BindingFlags.Instance|BindingFlags.NonPublic).GetValue(window);
                 var sections = (Dictionary<string, FrameworkElement>)typeof(MainWindow).GetField("settingsSections", BindingFlags.Instance|BindingFlags.NonPublic).GetValue(window);
-                Check(sections.Count == 31 && sections.ContainsKey("Appearance") && window.FindName("AdvancedSettingsHost") == null, "All 27 editors plus overview, connection, tools and appearance pages are accessible");
+                Check(sections.Count == 36 && sections.ContainsKey("Appearance") && sections.ContainsKey("Animations") && window.FindName("AdvancedSettingsHost") == null, "All 27 editors plus overview, connection, tools and appearance pages are accessible");
                 Check(FindVisualChildren<PasswordBox>(sections["The Handy"]).Any(box => box.Name == "txtHandyConnectionKey"),
                     "Unified Handy settings use a masked connection-key input");
                 Check(FindVisualChildren<TextBox>(sections["FFmpeg"]).Any(box => box.IsReadOnly
@@ -421,7 +421,7 @@ internal static class MediaShellSmokeTests
         Check(((System.Windows.Media.SolidColorBrush)window.TryFindResource("MediaAccentBrush")).Color.B>150, "Blue accent updates the shared palette");
         Call("NavigateTo","home"); Call("NavigateTo","library");
         Check(!((FrameworkElement)window.FindName("BrowsePage")).HasAnimatedProperties && ((FrameworkElement)window.FindName("BrowsePage")).Opacity==1, "Disabled animation shows pages immediately at full opacity");
-        settings.EnableInterfaceAnimations=true;
+        settings.InterfaceMotionMode="Standard"; settings.SimplifyInterfaceAnimations=false;
         Call("NavigateTo","home");
         Check(!SystemParameters.ClientAreaAnimation || ((FrameworkElement)window.FindName("BrowsePage")).HasAnimatedProperties, "Enabled page transition respects system animation preference");
         settings.EnableInterfaceAnimations=false;
@@ -651,7 +651,7 @@ internal static class MediaShellSmokeTests
         Check(!shortcut.IsVisible && InlineDialogService.IsOpen, "Shortcut editor stays inside the player");
         InlineDialogService.Complete(shortcut,false);Check(await shortcutTask==false && !InlineDialogService.IsOpen, "Cancelling inline shortcut restores the parent page");
         var wifi=new TCodeWifiDialog(endpoint=>Task.CompletedTask,()=>{});var wifiTask=InlineDialogService.ShowAsync(wifi);await Task.Delay(80);
-        Check(!wifi.IsVisible && InlineDialogService.IsOpen, "Wi-Fi settings open in the player without a separate window");
+        Check(!wifi.IsVisible && InlineDialogService.IsDevicePageOpen && !InlineDialogService.IsOpen, "Wi-Fi settings open in the player without a separate window");
         SavePreview(window,"v3-inline-wifi.png");
         InlineDialogService.Complete(wifi,false);await wifiTask;
         await CheckEditor(new DeviceManagerDialog(window.ViewModel.Devices));

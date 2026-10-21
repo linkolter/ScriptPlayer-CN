@@ -1,5 +1,5 @@
-{
-  "ApplicationVersion": "1.0.12.4",
+﻿{
+  "ApplicationVersion": "1.0.12.6",
   "MPVVersion": "0.41.0",
   "MPVPackageVersion": "0.41.0-8",
   "MPVSource": "https://github.com/mpv-player/mpv/tree/v0.41.0",

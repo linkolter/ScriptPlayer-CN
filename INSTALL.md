@@ -2,7 +2,7 @@
 
 ## English
 
-Prepared local candidate: `ScriptPlayer-v1.0.12.4-windows-x64-portable-candidate.zip`.
+Prepared local candidate: `ScriptPlayer-v1.0.12.6-windows-x64-portable-candidate.zip`.
 Check the repository Releases page for whether that attachment has been published.
 
 1. Use Windows 10/11 x64 with .NET Framework 4.8.
@@ -19,7 +19,7 @@ Windows user needs its own Handy key configuration.
 
 ## 简体中文
 
-本地候选包为 `ScriptPlayer-v1.0.12.4-windows-x64-portable-candidate.zip`，
+本地候选包为 `ScriptPlayer-v1.0.12.6-windows-x64-portable-candidate.zip`，
 是否已发布请以 Releases 实际附件为准。
 
 1. 系统需要 Windows 10/11 x64 与 .NET Framework 4.8。

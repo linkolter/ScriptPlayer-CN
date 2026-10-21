@@ -36,6 +36,26 @@ namespace ScriptPlayer.Themes
         {
             Visit(root, new HashSet<DependencyObject>());
         }
+        public static void SetPopupAnimations(bool enabled)
+        {
+            var value = enabled ? PopupAnimation.Fade : PopupAnimation.None;
+            if (popupAnimation == value) return;
+            popupAnimation = value;
+            if (Application.Current == null) return;
+            UpdatePopupResources(Application.Current.Resources);
+            foreach (Window window in Application.Current.Windows) UpdatePopupTree(window, new HashSet<DependencyObject>());
+        }
+        private static void UpdatePopupResources(ResourceDictionary dictionary)
+        {
+            foreach (var child in dictionary.MergedDictionaries) UpdatePopupResources(child);
+            if (dictionary.Keys.Cast<object>().Contains("MediaPopupAnimation")) dictionary["MediaPopupAnimation"] = popupAnimation;
+        }
+        private static void UpdatePopupTree(DependencyObject root, HashSet<DependencyObject> visited)
+        {
+            if (root == null || !visited.Add(root)) return;
+            if (root is FrameworkElement element) UpdatePopupResources(element.Resources);
+            foreach (var child in LogicalTreeHelper.GetChildren(root).OfType<DependencyObject>()) UpdatePopupTree(child, visited);
+        }
         private static void Visit(DependencyObject root, HashSet<DependencyObject> visited)
         {
             if (root == null || !visited.Add(root) || currentPalette == null) return;

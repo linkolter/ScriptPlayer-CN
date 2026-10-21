@@ -1,5 +1,14 @@
 # 架构决策记录
 
+## D016：设备入口统一于UI层，复用现有输出
+
+- 日期/状态/决策者：2026-10-20 / accepted / 用户要求仅改交互，不改底层。
+- 决定：MainWindow设备子页投影原Handy编辑器、Devices与TCodeStatus；InlineDialogService仅对TCode Wi-Fi/串口选用页内host。原VM命令继续拥有连接、设置和输出。
+- 协议：页内session不计作模态遮罩；重复请求不能返回串口成功；Wi-Fi忙碌时不允许其他连接/断开/退出或离页，保持原关闭保护；恢复被WPF预先改变的导航选中值。其他对话框保留旧呈现。
+- 蓝牙SPP由Windows映射COM，直接使用原SerialPort/115200。没有BLE适配器，不新增GATT、扫描或配对实现，不宣称实物已验证。
+- 后果：保留原Handy API错误反馈与已有controller修改密钥时自动刷新的限制；UI只显示请求已发及实际Devices，不伪造在线。未来BLE必须另立任务及设备协议验证。
+
+
 ## D015：采用稳定运行库的完整本地便携候选
 
 - 日期/状态/决策者：2026-10-16 / accepted for local integration / 用户要求集成两项目最新Release，并明确选择FFmpeg官网列出的Gyan稳定构建。
@@ -122,3 +131,12 @@
 - 决定：FFmpeg运行/展示/override分离；Handy XmlIgnore，legacy仅读、DPAPI CurrentUser独立Private存储、成功后提交无密钥XML，失败和损坏保护跨复制保留。保留现有连接协议，不把Web环境变量模式照搬到WPF用户凭据。
 - 发布：保持外部FFmpeg/libmpv，源码不带大二进制，下载候选随带runtime/许可；公开模式Rebuild+禁用debug，因为仅移除PDB不能清除PE内源路径。源码与发行包allowlist导出，最终解压内容检查本机已知key与地址；不输出或存实际key。
 - 后果：DPAPI不跨用户/机器移植；private与XML不是跨文件事务，前者可能已提交而后者仍旧。普通XML损坏保留原文件并阻止自动保存，需修复后重启。历史用户备份不自动删除，不上传开发工作区。二进制公开前必须补全第三方对应源码与构建材料；本轮未Git提交、上传或发布。
+
+## D017：可取消的界面动效与实时输出隔离
+
+- 日期/状态/决策者：2026-10-20 / accepted / 用户批准界面与动画方案后要求开始编译。
+- 决定：保留WPF，新增presentation-only MotionPresentation与SettingsViewModel.Motion；统一短时Opacity/RenderTransform，不引入新UI框架、动画依赖或常驻逐帧监听。
+- SettingsViewModel.IsInterfacePreference覆盖所有实际动画偏好与派生通知；不进入ApplySettings或RefreshRealtimePlayback。XML旧Enable节点通过独立代理迁移，显式新模式优先；保存逐项值不触发Custom，Duplicate末尾原始字段复制保证一致。
+- 系统禁用动画具有优先权。自动简化只影响有效策略，不重写用户选择；取消时钟不计入迟缓探测。最小化、系统/图形能力变化、窗口关闭有明确订阅与释放。
+- 原生叠加控件隐藏立即完成；出现使用0.86→1，保留非零alpha命中表面。临时增加诊断等待后通过不能当修复；保留原物理悬停断言，并增加短复现检查。
+- 后果：不改变MediaEngine、Coordinator、Realtime、ScriptEngine、OutputPipeline、TCode或HandyApi；动效不是精确设备同步或另一台电脑性能验证。实物及不同DPI/驱动仍需单独验收。

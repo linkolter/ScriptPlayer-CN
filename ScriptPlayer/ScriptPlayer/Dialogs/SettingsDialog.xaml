@@ -549,12 +549,12 @@
                             <controls:AwesomeIcon Icon="Rock_Hand_Solid"/>
                         </controls:PageSelector.Header>
                         <StackPanel>
-                            <DockPanel Margin="4" ToolTip="Connection key used to connect to The Handy. Sometimes also referred to as device id oder device key">
-                                <TextBlock Style="{StaticResource SettingName}" Text="Connection Key"/>
+                            <StackPanel Margin="4" ToolTip="Connection key used to connect to The Handy. Sometimes also referred to as device id oder device key">
+                                <TextBlock Text="Connection Key" Margin="0,0,0,8"/>
                                 <PasswordBox x:Name="txtHandyConnectionKey" PasswordChanged="HandyConnectionKeyChanged"/>
                                 <TextBlock Text="连接密钥仅保存在当前 Windows 用户的加密存储中，不随软件分发。" TextWrapping="Wrap" Margin="0,4,0,8"/>
                                 <TextBlock Text="{Binding Settings.PrivateSettingsStatus}" TextWrapping="Wrap" Foreground="OrangeRed"/>
-                            </DockPanel>
+                            </StackPanel>
                             <CheckBox IsChecked="{Binding Settings.WaitForDevicesToLoad}" Margin="4">Pause video while downloading script</CheckBox>
                         </StackPanel>
                     </Grid>

@@ -534,6 +534,9 @@
     </Compile>
     <Compile Include="MainWindow.About.cs" />
     <Compile Include="MainWindow.Appearance.cs" />
+    <Compile Include="MainWindow.Motion.cs" />
+    <Compile Include="Themes\MotionPresentation.cs" />
+    <Compile Include="ViewModels\SettingsViewModel.Motion.cs" />
     <Compile Include="Themes\AppearanceTheme.cs" />
     <Compile Include="Localization\EnglishUiStrings.cs" />
     <Compile Include="MainWindow.MediaShell.cs" />
@@ -557,6 +560,7 @@
     <Compile Include="ViewModels\MainViewModel.Playback.cs" />
     <Compile Include="MainWindow.PlaybackList.cs" />
     <Compile Include="MainWindow.UnifiedSettings.cs" />
+    <Compile Include="MainWindow.DeviceSettings.cs" />
     <Compile Include="MainWindow.PlaybackChrome.cs" />
     <Compile Include="Dialogs\SettingsDialog.Unified.cs" />
     <Compile Include="Controls\MediaSeekBar.cs" />

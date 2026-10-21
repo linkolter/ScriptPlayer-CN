@@ -178,7 +178,7 @@ namespace ScriptPlayer
         {
             bool showRail = !navigationHidden && (!ViewModel.IsFullscreen || (currentPage == "player" && autoHidePlaybackControls));
             NavigationRail.Visibility = showRail ? Visibility.Visible : Visibility.Collapsed;
-            PlayerControls.Visibility = playbackChromeHidden ? Visibility.Collapsed : Visibility.Visible;
+            Themes.MotionPresentation.SetVisible(PlayerControls, !playbackChromeHidden, Themes.InterfaceMotion.Transport);
             PlaybackTimeline.TransportVisible = !playbackChromeHidden;
             PlaybackTimeline.Compact = currentPage != "player";
             ShellRoot.ColumnDefinitions[0].Width = new GridLength(showRail ? 260 : 0);

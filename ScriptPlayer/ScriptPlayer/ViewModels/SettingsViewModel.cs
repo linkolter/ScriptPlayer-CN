@@ -16,14 +16,14 @@ using ScriptPlayer.Shared.TheHandy;
 
 namespace ScriptPlayer.ViewModels
 {
-    public class SettingsViewModel : INotifyPropertyChanged
+    public partial class SettingsViewModel : INotifyPropertyChanged
     {
         private string _interfaceLanguage = "zh-CN";
         private string _interfaceTheme = "Dark";
         private string _interfaceAccent = "Orange";
         private bool _enableInterfaceAnimations = true;
         public static bool IsInterfacePreference(string name) => name == nameof(InterfaceLanguage)
-            || name == nameof(InterfaceTheme) || name == nameof(InterfaceAccent) || name == nameof(EnableInterfaceAnimations);
+            || name == nameof(InterfaceTheme) || name == nameof(InterfaceAccent) || IsMotionPreference(name);
 
         // Presentation-only preferences; never change media, script or device values.
         public string InterfaceLanguage
@@ -41,10 +41,11 @@ namespace ScriptPlayer.ViewModels
             get => _interfaceAccent;
             set { var normalized = value == "Blue" || value == "Teal" || value == "Purple" || value == "Rose" ? value : "Orange"; if (_interfaceAccent == normalized) return; _interfaceAccent = normalized; OnPropertyChanged(); }
         }
+        [XmlIgnore]
         public bool EnableInterfaceAnimations
         {
             get => _enableInterfaceAnimations;
-            set { if (_enableInterfaceAnimations == value) return; _enableInterfaceAnimations = value; OnPropertyChanged(); }
+            set { SetLegacyAnimationPreference(value); }
         }
         private string _handyDeviceId;
         private bool _legacyHandyCredential, _handyCredentialLoadFailed, _handyCredentialEdited, _ordinarySettingsLoadFailed;
@@ -371,6 +372,7 @@ namespace ScriptPlayer.ViewModels
             duplicate._handyCredentialLoadFailed = _handyCredentialLoadFailed;
             duplicate._handyCredentialEdited = _handyCredentialEdited;
             duplicate._ordinarySettingsLoadFailed = _ordinarySettingsLoadFailed;
+            CopyMotionPreferencesTo(duplicate);
 
             return duplicate;
         }

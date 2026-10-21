@@ -6,7 +6,11 @@
 
 一款面向 Windows 的本地视频与 Funscript 脚本播放器，重新整理了界面、媒体库和围绕脚本播放的时间轴，让日常操作更加自然、顺手。
 
-当前源码版本：**v1.0.12.4**。更新后的便携包目前为本地候选，上传发行附件是独立步骤。实际可下载文件请查看 [Releases 发布页](https://github.com/linkolter/ScriptPlayer-CN/releases)。
+当前源码版本：**v1.0.12.6**。更新后的便携包目前为本地候选，上传发行附件是独立步骤。实际可下载文件请查看 [Releases 发布页](https://github.com/linkolter/ScriptPlayer-CN/releases)。
+
+主页优先展示设备连接，Handy、Wi-Fi、USB 与蓝牙 SPP/COM 统一在设置子页配置。蓝牙需要 Windows 已配对并提供传出 COM 端口，本轮不增加 BLE/GATT。见[变更与验证边界](CHANGELOG.md)。
+
+动画设置位于 **设置 → 操作与外观 → 动画与性能**，提供关闭、轻量、标准和自定义模式；默认轻量，可逐项调整并关闭动态预览。系统关闭动画或最小化时会停用相应效果。
 
 ## 播放与浏览
 
@@ -35,7 +39,7 @@
 
 ## 下载与安装
 
-最新本地候选：`ScriptPlayer-v1.0.12.4-windows-x64-portable-candidate.zip`。
+最新本地候选：`ScriptPlayer-v1.0.12.6-windows-x64-portable-candidate.zip`。
 需要 Windows 10/11 x64 和 .NET Framework 4.8。完整解压到新的可写目录，直接运行 `ScriptPlayer.exe`；保留所有 DLL 和子目录，无需在线组件安装器或 7-Zip 安装步骤。升级时使用新目录，不覆盖旧版和用户配置。详见 [安装说明](INSTALL.md)。
 
 本地便携候选包含 MSYS2 UCRT64 mpv 0.41.0-8（mpv v0.41.0）和 Gyan FFmpeg 9.0.2 full。组件身份及校验见 `tools/runtime-manifest.json`。源码仓库不跟踪这些二进制，单独下载源码不会自动获得组件。
@@ -48,7 +52,7 @@ WPF + .NET Framework 4.8 + libmpv。主工程：`ScriptPlayer/ScriptPlayer/Scrip
 
 本仓库提供 `tools/Build-Public.ps1` 与 `tools/runtime-manifest.json`。构建前恢复依赖包，并将匹配的运行组件放入 `ScriptPlayer/ScriptPlayer/Runtime`。本机已验证构建使用已有 MK312 产物，**尚未验证新机器从零构建整个解决方案**，不能将脚本理解为干净环境的一键构建保证。
 
-根目录 `SHA256SUMS.txt` 记录两个已准备的 v1.0.12.4 ZIP 校验值，不用于校验源码目录。PARTIAL 材料包不是完整对应源码包。开发固定使用当前检出目录，参见 [工作目录约定](docs/WORKSPACE.md)。NFO 格式及示例见 [中文指南](docs/NFO.zh-CN.md) 与 [English guide](docs/NFO.en.md)。
+根目录 `SHA256SUMS.txt` 记录已准备的 ZIP 校验值（同时保留 v1.0.12.4 候选校验），不用于校验源码目录。PARTIAL 材料包不是完整对应源码包。开发固定使用当前检出目录，参见 [工作目录约定](docs/WORKSPACE.md)。NFO 格式及示例见 [中文指南](docs/NFO.zh-CN.md) 与 [English guide](docs/NFO.en.md)。
 
 ## 反馈
 

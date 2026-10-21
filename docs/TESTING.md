@@ -1,9 +1,36 @@
 # 构建与验证
 
+## 2026-10-20 v1.0.12.6 最终验收
+
+- 本轮恢复点：当前仓库忽略目录 `.scratch/visual-motion-20261020/before/` 的真实文件字节；包含开工前v5未提交工作。完整差异/文件SHA256/审查记录/失败日志保留在同任务目录。
+- 构建：工作区 `build-media-player.ps1 -PublishName .scratch/visual-motion-20261020/build-accepted -PublicRelease`。VS2022 Release成功，原SubtitleHandler未使用字段两条CS0414警告保留。仍使用既有MK312预编译依赖，不等于干净机器完整方案构建。
+- 完整Stage4：`run-playback-baseline.ps1 -PublishName .scratch/visual-motion-20261020/build-accepted -Stage4`；run `20261020-180737-243372`，退出0，`stage4=true / coreOnly=false / suitesFailed=[]`。播放核心41、暂停退出33、协调核心32/UI18、实时核心32/UI37、Shell452、Timeline156，共 **801 PASS / 0 FAIL**。源码及该次harness哈希与当前对应源码一致。
+- `tests/Run-MotionTests.ps1 -PrivateBin .scratch/visual-motion-20261020/build-accepted -OutputDirectory .scratch/<新目录>`：68配置（旧XML迁移、模式优先级、全部预设/逐标志往返与Duplicate、通知隔离）、46真实WPF控件/取消/三态/系统/低图形能力/最小化/卸载/GIF/760窄窗中英文深浅主题、1真实libmpv物理hover，共115/0。最终证据 `tests-reviewed`。
+- NativeHover先保存鼠标，失败立即ERROR/非零；25s独立截止恢复原位置并退出，开始时要求真实MpvTimeSource和Ready/playing/duration。Runner同时检查退出码、成功标记和错误行，不把窗口关闭重置的进程码当通过。
+- 原外观`Run-InterfacePreferenceTests`：30/0；SeekBoundsProbe：6/0（宽120/502、两端以及中间位置）。设备UI：48/0；ReleasePrivacy：33/0；TCodeWifiTests六轴/UDP回环/失败COM：20/0；TCodeWifiDialogTests：9/0。所有测试串行，私有APPDATA/临时夹具；无实物连接。
+- 修改前v5完整基线run `20261020-170652-9afc0e`：536 PASS/2 ERROR（SetCursorPos、Cannot preserve cursor）；原v5 Shell独立重跑最终0失败。v6早期run `20261020-173755-b4c9aa` 和 `20261020-175042-0b1a33` 在真实悬停超时，不能认定历史问题。诊断增加等待曾偶然通过，但已移除临时等待/日志，原断言未降低。
+- 最小探针在修复前构建连续捕获约0.574不透明度（阈值>=.8），确认返回1；可取消显示从0改为.86后，原生hover及未放宽的完整Stage4通过。保留red/green和早期失败日志，不覆盖旧结果。
+- 独立审查分阶段核对XML、时钟归属、纯UI白名单、GIF不重复重启及指针保存/截止，修正建议后复验。实时generation和pendingPlaybackSettings不变；播放、AB、Seek、暂停退出、650ms界面繁忙时后台输出见完整Stage4。
+- 边界：未验证实物Handy/OSR6/蓝牙运动、不同DPI/驱动/低端实机或另一台干净Windows。软件渲染/系统关闭/最小化为可注入策略检查；自然卡顿自动简化未作长期性能统计。第三方完整对应材料未在本轮补齐。
+
+
+## v1.0.12.5 设备交互（2026-10-20）
+
+- 修改前固定仓库干净，v4 Stage4 `20261020-113150-821452`：512 PASS、2 ERROR。旧文档曾将相同分项误加为612，本轮按原始日志更正为512，不改变原失败结论。
+- v5最终Release编译成功；已有SubtitleHandler._currentIndex的两条CS0414警告保留。
+- `tests/Run-DeviceSettingsUiTests.ps1 -PrivateBin .scratch/device-ui-20261020/build-accepted -OutputDirectory .scratch/<新目录>`：48 PASS / 0 FAIL。真实WPF控件事件与假连接回调，覆盖主页到子页、缺密钥、密码框宽度、忙碌导航/断开/退出/重复打开、COM选择完成、连接失败与恢复、760宽/中英文/深浅主题。图为测试窗口渲染，无真实硬件连接。
+- 最终完整Stage4 `20261020-121432-0c8228`：536 PASS、2 ERROR，退出码1。Shell323项通过后SetCursorPos failed；时间轴20项后Cannot preserve cursor for capture test。与改前同类环境鼠标API异常，未执行后续断言不计通过；未放宽测试。
+- 播放核心41、暂停退出33、协调核心32/UI18、实时核心32/UI37均0失败；新增导航页面使Shell已执行通过数比改前多24项。
+- 隐私33/0；TCodeWifiTests20/0（六轴与UDP loopback、坏COM）；TCodeWifiDialogTests9/0（含忙碌、坏端点、连接失败和地址保留）。仅专属临时目录，未操作用户媒体/真实设备。
+- 独立审查修正Wi-Fi连接期间争用控制器、拒绝导航选中项不一致及Handy说明问题，最终未发现遗留High。Shared/HandyApi/ViewModels/Playback差异为零。
+- 证据：本仓库忽略目录 `.scratch/device-ui-20261020`，含before字节快照、计划、专项日志、渲染图与报告；完整runner证据在上述工作区run。第一次专项测试遗漏InitializeComponent导致测试进程未退出，已按专属exe完整路径收尾；修复测试初始化后重跑，不作为产品失败。
+- 未验证：Handy实际网络连接、OSR6运动、蓝牙SPP实机、BLE/GATT、另一台干净电脑；第三方材料完整性仍是独立待办。未自动提交/推送或发布Release。
+
+
 ## 2026-10-16 固定仓库验证
 
 从当前 GitHub Desktop 仓库重新编译 v1.0.12.4 成功。完整 Stage4
-`20261016-150627-f4f19b` 为612 PASS、2 ERROR，退出码1：Shell在299项通过后
+`20261016-150627-f4f19b` 为512 PASS、2 ERROR，退出码1：Shell在299项通过后
 `SetCursorPos failed`；时间轴在20项通过后 `Cannot preserve cursor for capture test`。
 其余播放核心41、退出33、协调核心32/UI18、实时核心32/UI37均0失败。
 未执行的后续UI断言不计通过；不把此次结果写成完整通过。凭据隔离另33/0。

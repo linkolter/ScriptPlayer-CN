@@ -15,7 +15,7 @@ namespace ScriptPlayer
         private void ApplyAppearanceSettings(string changed = null)
         {
             if (ViewModel?.Settings == null) return;
-            bool paletteChanged = changed == null || changed == nameof(SettingsViewModel.InterfaceTheme) || changed == nameof(SettingsViewModel.InterfaceAccent) || changed == nameof(SettingsViewModel.EnableInterfaceAnimations);
+            bool paletteChanged = changed == null || changed == nameof(SettingsViewModel.InterfaceTheme) || changed == nameof(SettingsViewModel.InterfaceAccent);
             if (paletteChanged)
             {
                 Themes.AppearanceTheme.Apply(ViewModel.Settings.InterfaceTheme, ViewModel.Settings.InterfaceAccent, ViewModel.Settings.EnableInterfaceAnimations);
@@ -45,8 +45,8 @@ namespace ScriptPlayer
             }
             PageTitle.Text = ChineseLocalization.Translate(currentPage == "settings" ? "设置" : currentPage == "library" ? "媒体列表" : "主页");
             }
-            if (!ViewModel.Settings.EnableInterfaceAnimations || !SystemParameters.ClientAreaAnimation)
-                StopInterfaceAnimations();
+            if (changed == null || SettingsViewModel.IsMotionPreference(changed)) ConfigureInterfaceMotion();
+            RefreshMotionStatus();
         }
         private FrameworkElement CreateAppearanceSettings()
         {
@@ -57,9 +57,12 @@ namespace ScriptPlayer
             var animation = new CheckBox { Name = "InterfaceAnimationsSwitch", Content = "" };
             RegisterName(animation.Name, animation);
             System.Windows.Automation.AutomationProperties.SetName(animation, "界面切换动画");
-            animation.SetResourceReference(StyleProperty, "SettingsToggleSwitch");
+            animation.SetResourceReference(StyleProperty, "CompactToggleSwitch");
             animation.SetBinding(CheckBox.IsCheckedProperty, new Binding("Settings.EnableInterfaceAnimations") { Source = ViewModel, Mode = BindingMode.TwoWay });
             panel.Children.Add(AppearanceRow("界面切换动画", "关闭后页面直接显示。系统关闭动画时同样停用。", animation));
+            var options = new Button { Content = "动画与性能", HorizontalAlignment = HorizontalAlignment.Left };
+            options.Click += (s,e) => SelectSettingsPage("Animations");
+            panel.Children.Add(options);
             return panel;
         }
         private ComboBox AppearanceSelector(string property, string[] options, string name)
@@ -81,7 +84,7 @@ namespace ScriptPlayer
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             var labels = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0,0,16,0) };
             labels.Children.Add(new TextBlock { Text = title, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap });
-            var hint = new TextBlock { Text = description, TextWrapping = TextWrapping.Wrap, FontSize = 12, Margin = new Thickness(0,5,0,0) };
+            var hint = new TextBlock { Text = description, TextWrapping = TextWrapping.Wrap, FontSize = 13, Margin = new Thickness(0,5,0,0) };
             hint.SetResourceReference(TextBlock.ForegroundProperty, "MediaMutedBrush"); labels.Children.Add(hint);
             grid.Children.Add(labels); Grid.SetColumn(editor,1); grid.Children.Add(editor);
             var row = new Border { Child = grid, MinHeight = 80, Padding = new Thickness(16), Margin = new Thickness(0,0,0,8) };
@@ -100,16 +103,11 @@ namespace ScriptPlayer
         private void AnimatePageTransition(FrameworkElement page)
         {
             if (page == null) return;
-            page.BeginAnimation(UIElement.OpacityProperty, null);
-            page.Opacity = 1;
-            if (!page.IsVisible || ViewModel?.Settings.EnableInterfaceAnimations != true || !SystemParameters.ClientAreaAnimation) return;
-            // Opacity only: no layout or hit-test delay and no animation of the native media surface.
-            page.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(.82, 1, TimeSpan.FromMilliseconds(160)) { FillBehavior = FillBehavior.Stop });
+            Themes.MotionPresentation.FadeIn(page, Themes.InterfaceMotion.Page);
         }
         private void StopInterfaceAnimations()
         {
-            foreach (var page in new FrameworkElement[] { BrowsePage, SettingsPageHost })
-                if (page != null) { page.BeginAnimation(UIElement.OpacityProperty,null); page.Opacity = 1; }
+            Themes.MotionPresentation.StopAll();
         }
     }
 }

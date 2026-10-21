@@ -49,9 +49,9 @@ using System.Windows;
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.0.12.4")]
-[assembly: AssemblyFileVersion("1.0.12.4")]
+[assembly: AssemblyVersion("1.0.12.6")]
+[assembly: AssemblyFileVersion("1.0.12.6")]
 // Use informational version to store git hashes
-[assembly: AssemblyInformationalVersion("v1.0.12.4")]
+[assembly: AssemblyInformationalVersion("v1.0.12.6")]
 [assembly: Guid("6F331F84-6C70-4E9F-AAFF-8527663E68A5")]
 

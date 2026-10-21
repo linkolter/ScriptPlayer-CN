@@ -38,6 +38,7 @@ namespace ScriptPlayer
 
         private void InitializeMediaShell()
         {
+            HomeDeviceConnect.DeviceSelected += OpenDeviceSettings;
             RecentMediaItems.ItemsSource = recentMedia;
             homeMedia = new HomeMediaViewModel(ViewModel.Playlist);
             FavoriteMediaItems.ItemsSource = homeMedia.Favorites;
@@ -154,6 +155,7 @@ namespace ScriptPlayer
                 && (ViewModel.PlaybackMode == PlaybackMode.Mpv || ViewModel.PlaybackMode == PlaybackMode.Local)) page = "home";
             if (ViewModel.IsFullscreen && page != "player") SetFullscreen(false, true);
             if (currentPage == "settings" && page != "settings") unifiedSettingsEditor?.CommitUnifiedCollections();
+            if (currentPage == "settings" && page != "settings" && !LeaveDeviceEditors()) return;
             QuickSettingsPopup.IsOpen = false;
 
 
@@ -245,6 +247,7 @@ namespace ScriptPlayer
 
         private void DisposeMediaShell()
         {
+            DisposeInterfaceMotion();
             SavePausedExitPoint();
             homeMedia?.Dispose();
             homeMedia = null;

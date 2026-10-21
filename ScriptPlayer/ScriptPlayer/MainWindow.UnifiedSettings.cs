@@ -44,16 +44,18 @@ namespace ScriptPlayer
             pages["Connections"] = SettingsConnectionPage;
             pages["Tools"] = SettingsToolsPage;
             pages["Appearance"] = CreateAppearanceSettings();
+            pages["Animations"] = CreateAnimationSettings();
+            CreateDeviceConnectionPages(pages);
             AddSettingsGroup("播放", pages, new[] {
                 "General|播放与窗口", "Playlist|播放队列与循环", "Players|外部播放器连接", "Subtitles|字幕", "Crop Video|画面裁剪", "Displayed Time|时间显示", "Chapter Settings|章节与跳过" });
             AddSettingsGroup("脚本与同步", pages, new[] {
                 "Scripts|脚本加载与匹配", "Timings|音画与脚本延迟", "Range|行程范围与位置过滤", "Speed|速度与限制", "SoftSeek|平滑跳转", "Gaps|空白片段处理" });
             AddSettingsGroup("设备", pages, new[] {
-                "Connections|连接与管理", "The Handy|Handy 连接配置", "Buttplug|Buttplug 连接与启动", "Devices|设备输出行为", "E-Stim Audio|电刺激音频设备", "Funstim Converter|Funstim 转换" });
+                "Connections|选择与连接设备", "The Handy|Handy", "TCode Wi-Fi|OSR6 / SR6 Wi-Fi", "TCode Serial|USB 串口", "TCode Bluetooth|蓝牙串口（SPP/COM）", "Device Manager|已连接设备", "Buttplug|Buttplug 连接与启动", "Devices|设备输出行为", "E-Stim Audio|电刺激音频设备", "Funstim Converter|Funstim 转换" });
             AddSettingsGroup("媒体库与文件", pages, new[] {
                 "Tools|媒体与脚本工具", "Paths|媒体与脚本搜索路径", "Favourite Folders|常用文件夹", "Format Preference|格式优先级", "FFmpeg|内置 FFmpeg 与预览生成" });
             AddSettingsGroup("操作与外观", pages, new[] {
-                "Appearance|界面与外观", "Input|鼠标操作", "Input Mappings|快捷键", "Notifications|播放通知", "Remember|恢复与记忆", "Debug|脚本可视化与调试" });
+                "Appearance|界面与外观", "Animations|动画与性能", "Input|鼠标操作", "Input Mappings|快捷键", "Notifications|播放通知", "Remember|恢复与记忆", "Debug|脚本可视化与调试" });
             foreach (var section in settingsSections)
             {
                 Localization.ChineseLocalization.TranslateTree(section.Value);
@@ -167,6 +169,7 @@ namespace ScriptPlayer
         private void SelectSettingsPage(string id)
         {
             if (!settingsSections.TryGetValue(id, out var page)) return;
+            if (selectedSettingsPage != id && !LeaveDeviceEditors(id)) return;
             selectedSettingsPage = id;
             unifiedSettingsEditor?.CommitUnifiedCollections();
             SettingsPageHost.Content = page;
@@ -183,6 +186,7 @@ namespace ScriptPlayer
             SettingsContentScroll.ScrollToTop();
             SettingsContentScroll.ScrollToLeftEnd();
             AnimatePageTransition(SettingsPageHost);
+            EnsureDeviceConnectionEditor(id);
         }
 
         private static void CollectSettingsText(DependencyObject root, HashSet<DependencyObject> visited, List<string> text)

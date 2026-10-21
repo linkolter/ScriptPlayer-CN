@@ -55,6 +55,7 @@ namespace ScriptPlayer
 
         private void MainWindow_OnClosing(object sender, CancelEventArgs e)
         {
+            if (!CanChangeDevicePage()) { e.Cancel = true; return; }
             if(!ViewModel.IsFullscreen)
                 SaveCurrentWindowRect();
 
@@ -802,9 +803,9 @@ namespace ScriptPlayer
             ShowPlaylist();
         }
 
-        private async void ShowDevices()
+        private void ShowDevices()
         {
-            await InlineDialogService.ShowAsync(new DeviceManagerDialog(ViewModel.Devices));
+            OpenDeviceSettings("Device Manager");
         }
 
         private async void ShowGeneratorProgress()

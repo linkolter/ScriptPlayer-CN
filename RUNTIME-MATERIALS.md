@@ -1,6 +1,6 @@
 # Runtime materials / 运行组件材料
 
-Current v1.0.12.4 local portable candidate uses MSYS2 UCRT64 mpv 0.41.0-8
+Current v1.0.12.6 local portable candidate uses MSYS2 UCRT64 mpv 0.41.0-8
 (mpv v0.41.0, client API 2.5, internal FFmpeg 9.0.2) and standalone Gyan
 FFmpeg 9.0.2 full. Exact package origins, file sizes, hashes and source/build
 references are recorded in `tools/runtime-manifest.json`, mirrored in the

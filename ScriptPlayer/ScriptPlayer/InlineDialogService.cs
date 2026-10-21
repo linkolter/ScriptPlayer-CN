@@ -13,14 +13,17 @@ namespace ScriptPlayer
     // Explicitly opted-in setting editors only. The async host never starts a nested message loop.
     public static class InlineDialogService
     {
-        private sealed class Session { public TaskCompletionSource<bool?> Completion = new TaskCompletionSource<bool?>(TaskCreationOptions.RunContinuationsAsynchronously); public bool? Result; }
+        private sealed class Session { public TaskCompletionSource<bool?> Completion = new TaskCompletionSource<bool?>(TaskCreationOptions.RunContinuationsAsynchronously); public bool? Result; public bool DevicePage; }
         private static readonly Dictionary<Window,Session> sessions = new Dictionary<Window,Session>();
-        public static bool IsOpen => sessions.Count != 0;
+        public static bool IsOpen => sessions.Values.Any(session => !session.DevicePage);
+        public static bool IsDevicePageOpen => sessions.Values.Any(session => session.DevicePage);
         public static event Action<Window> Opened;
         public static async Task<bool?> ShowAsync(Window dialog)
         {
             var main = Application.Current.Windows.OfType<MainWindow>().FirstOrDefault();
             if (main == null) return dialog.ShowDialog();
+            string devicePage = main.DeviceDialogPage(dialog);
+            if (devicePage != null) return await ShowDevicePageAsync(main, dialog, devicePage);
             var video=(Grid)main.FindName("VideoOverlayLayer");
             var target=((FrameworkElement)main.FindName("GridVideo")).IsVisible ? video : (Grid)main.FindName("ShellRoot");
             var content=dialog.Content as FrameworkElement;
@@ -82,6 +85,58 @@ namespace ScriptPlayer
                 if(oldFocus!=null)Keyboard.Focus(oldFocus);
             }
         }
+        private static async Task<bool?> ShowDevicePageAsync(MainWindow main, Window dialog, string id)
+        {
+            if (!main.CanChangeDevicePage()) { dialog.Close(); return false; }
+            var existing = main.ExistingDeviceEditor(id);
+            if (existing != null)
+            {
+                // A duplicate serial selector must never return true and connect twice.
+                main.ShowDeviceEditorPage(id);
+                dialog.Close();
+                return false;
+            }
+            var content = dialog.Content as FrameworkElement;
+            if (content == null) throw new InvalidOperationException("设置页内容为空。");
+            var session = new Session { DevicePage = true };
+            sessions.Add(dialog, session);
+            EventHandler closed = (s,e) => session.Completion.TrySetResult(session.Result);
+            EventHandler mainClosed = (s,e) => Complete(dialog, false);
+            dialog.Closed += closed;
+            main.Closed += mainClosed;
+            try
+            {
+                dialog.Content = null;
+                content.DataContext = dialog.DataContext;
+                foreach (object key in dialog.Resources.Keys) content.Resources[key] = dialog.Resources[key];
+                NormalizeBackgrounds(content);
+                content.Width = double.NaN;
+                content.MinWidth = 0;
+                ChineseDeviceContent(content);
+                content.AddHandler(Button.ClickEvent, new RoutedEventHandler((s,e) =>
+                {
+                    if ((e.OriginalSource as Button)?.IsCancel == true) Complete(dialog, false);
+                }));
+                main.AttachDeviceEditor(id, dialog, content);
+                dialog.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent, dialog));
+                Opened?.Invoke(dialog);
+                return await session.Completion.Task;
+            }
+            finally
+            {
+                dialog.Closed -= closed;
+                main.Closed -= mainClosed;
+                main.DetachDeviceEditor(id, dialog);
+                sessions.Remove(dialog);
+            }
+        }
+
+        private static void ChineseDeviceContent(FrameworkElement content)
+        {
+            ScriptPlayer.Localization.ChineseLocalization.TranslateTree(content);
+            Themes.AppearanceTheme.ApplyTo(content);
+        }
+
         private static void NormalizeBackgrounds(DependencyObject root)
         {
             if (root is Panel panel && panel.Background is SolidColorBrush fill && fill.Color == Colors.White) panel.Background=Brushes.Transparent;

@@ -11,6 +11,8 @@ namespace ScriptPlayer.Dialogs
 {
     public sealed class TCodeWifiDialog : Window
     {
+        private bool busy;
+        public bool IsConnecting => busy;
         private static string ErrorMessage(Exception ex)
         {
             while (ex is AggregateException && ex.InnerException != null) ex = ex.InnerException;
@@ -42,7 +44,6 @@ namespace ScriptPlayer.Dialogs
             var disconnect = new Button { Content = "断开", MinWidth = 75, Padding = new Thickness(10,7,10,7), Margin = new Thickness(0,0,8,0) };
             var close = new Button { Content = "关闭", MinWidth = 75, Padding = new Thickness(10,7,10,7), IsCancel = true };
             close.Click += delegate { Close(); };
-            bool busy = false;
             Closing += (s,e) => { if (busy) e.Cancel = true; };
             connect.Click += async delegate
             {

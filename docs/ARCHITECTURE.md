@@ -149,3 +149,7 @@ TimelineViewModel展示更新按实际引用/值变化通知，marker按Position
 SettingsViewModel.FfmpegPath只供运行时定位（XmlIgnore）；FfmpegOverridePath兼容旧FfmpegPath XML节点，FfmpegDisplayPath供只读设置展示。默认bundled路径不序列化，显式override保留。
 
 HandyDeviceId只在内存，legacy XML入口只读不写。SettingsViewModel.FromFile/Save→Settings.HandyCredentialStore→当前用户DPAPI/Private文件；先提交private，再原子替换普通XML。损坏ordinary XML仍恢复独立private值，保护位跨Duplicate保留且阻止默认覆盖；未编辑的损坏cipher同样不覆盖。两文件不是跨文件原子事务。UI PasswordBox初始化guard避免空框清除已有key；新展示/错误通知不触发Realtime重建。没有调整HandyController协议或实际输出。
+
+## v1.0.12.6 界面动效边界
+
+MainWindow.Motion提供设置页/系统与窗口生命周期；MotionPresentation消费纯界面偏好，持有短时WPF时钟，不接收媒体时间、脚本或设备对象。Appearance仍负责调色，菜单动效资源单独更新。InlineFlyout与PlayerControls消费同一策略；VideoDetailsPreview仅控制已有GifPlayer呈现，不修改媒体生成或Shared GIF模块。SettingsViewModel.Motion定义旧XML代理、新预设/逐项标志及复制协议，所有运行时通知走现有UI偏好白名单。
